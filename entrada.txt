@@ -1,0 +1,35 @@
+mkdisk -size=80 -unit=M -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=BF
+
+#Crear particiones Disco1.disk
+fdisk -type=P -unit=K -name=Part1 -size=7680 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=BF
+fdisk -type=E -unit=K -name=Part2 -size=7680 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=FF
+fdisk -type=E -unit=K -name=Part3 -size=7680 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=WF #Debe dar error por que ya existe una extendida
+fdisk -type=P -unit=K -name=Part3 -size=7680 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=WF
+fdisk -type=P -unit=K -name=Part4 -size=7680 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=BF
+fdisk -type=L -unit=K -name=Part5 -size=1270 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=BF
+fdisk -type=L -unit=K -name=Part6 -size=1270 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=BF
+fdisk -type=L -unit=K -name=Part7 -size=1270 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=WF
+fdisk -type=L -unit=K -name=Part8 -size=1270 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=WF
+fdisk -type=L -unit=K -name=Part9 -size=1270 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=BF
+fdisk -type=L -unit=K -name=Part10 -size=1270 -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -fit=BF
+
+#Monta las particiones Disco1.disk
+mount -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -name=Part1 #vda1
+mount -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco2.disk -name=Part9 #Debe dar error por que no existe
+mount -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -name=Part5 #vda2
+mount -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -name=Part7 #vda3
+mount -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -name=Part6 #vda4
+mount -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -name=Part2 #Debe dar error porque no se puede montar una particion extendida
+mount -path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/archivos/fase1/Disco1.disk -name=Part3 #vda5
+
+#Desmontar las particiones
+unmount -id=vda4
+unmount -id=vda5
+unmount -id=vda2
+#Desmontar Error
+unmount -id=vdx1
+
+#Creando reportes
+rep -id=vda1 -Path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/mia/mbr1.png -name=mbr
+rep -id=vda1 -Path=/home/TU_NOMBRE_DE_USUARIO/Documents/Calificacion/mia/disk1.png -name=disk
+
