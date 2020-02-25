@@ -80,7 +80,7 @@ node *semantic::compute(node *node_){
                 break;
             case NAME:
                 //colocar el nombre al nuevo disco
-                memcpy(result->metadata.name, tempData->valor.toStdString().c_str(),tempData->valor.size());
+                strcpy(result->metadata.name, tempData->valor.toStdString().c_str());
                 break;
             case UNIT:
                 if(tempData->valor.size() == 1){

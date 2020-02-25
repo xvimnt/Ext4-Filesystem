@@ -3,6 +3,17 @@
 
 typedef struct
 {
+    char status;
+    char fit[2];
+    int start;
+    int size;
+    int next;
+    char name[16];
+}Ebr;
+
+
+typedef struct
+{
     char sb_nombre_hd[25];
     int  sb_arbol_virtual_count;
     int  sb_detalle_directorio_count;

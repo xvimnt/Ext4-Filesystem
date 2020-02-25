@@ -4,6 +4,7 @@
 #include <fstream>
 #include <iostream>
 #include "node.h"
+
 #include <QTextStream>
 #include <QFile>
 #include <QFileInfo>
@@ -401,7 +402,7 @@ static void GrapvizDisco(string extension, QString dot, string path){
         //    cout<<"dentro pdf "<<endl;
     }else if(extension=="png"){
         comando.append("dot -Tpng ");
-        comando.append("/home/javig/grafo.dot ");
+        comando.append("grafo.dot ");
         comando.append("-o ");
         comando.append(path);
         int res =system(comando.c_str());
@@ -412,7 +413,7 @@ static void GrapvizDisco(string extension, QString dot, string path){
 
 }
 
-void graficador::generate_dsk_table_content(string output_path,Mbr mbr){
+void graficador::generate_dsk_table_content(string output_path,Mbr mbr,FILE *file){
     long tamanototal = mbr.size;
     //cout<<"tamaño del disco es "<<tamanototal<<endl;
     QString label[4];
@@ -421,12 +422,33 @@ void graficador::generate_dsk_table_content(string output_path,Mbr mbr){
         if(mbr.partitions[i].start==-1){
             numerovacias++;
         }else{
-            if(mbr.partitions[i].type=='e'){
+            if(mbr.partitions[i].type=='E'){
                 long tam = mbr.partitions[i].size; //cout<<"mi tam"<<tam<<endl;
                 long porcentaje = ((tam*100)/(tamanototal));
                 ocupado+=porcentaje;
                 label[i]=" { Extendida ";label[i].append(to_string(porcentaje).c_str());
-                label[i].append("% |{ EBR |  } }");
+                label[i].append("% |{ ");
+                //logicas
+                Ebr ebr;
+                fseek(file,mbr.partitions[i].start,SEEK_SET);
+                fread(&ebr, sizeof(Ebr), 1, file);//Lee el ebr raiz
+                //buscando el nombre entre las particiones logicas
+                while(ebr.next != -1)
+                {
+                    if(ebr.start == -1)
+                    {
+                        label[i].append("Libre |");
+                    }
+                    else label[i].append("EBR |");
+                    long tam2 = ebr.size;
+                    porcentaje = ((tam2*100)/(tam));
+                    label[i].append(to_string(porcentaje).c_str());
+                    label[i].append("% |");
+                    fseek(file,ebr.next,SEEK_SET);
+                    fread(&ebr, sizeof(Ebr), 1, file);//Lee el ebr raiz
+                }
+
+                label[i].append(" } }");
             }else {
                 long tam = mbr.partitions[i].size;
                 long porcentaje = ((tam*100)/(tamanototal));
@@ -470,10 +492,10 @@ void graficador::generate_dsk_table_content(string output_path,Mbr mbr){
             "\n"+
             "labelloc=\"t\"; \n"+
             "label=\""+disco+"\";";
-    GrapvizDisco("pdf",dot,disco.toStdString());
+    GrapvizDisco("png",dot,output_path);
 }
 
-void graficador::generate_mbr_table_content(string output_path,Mbr mbr)
+void graficador::generate_mbr_table_content(string output_path,Mbr mbr, string choice)
 {
     // genero las filas del html
     QString ssize=std::to_string(mbr.size).c_str();
@@ -582,7 +604,7 @@ void graficador::generate_mbr_table_content(string output_path,Mbr mbr)
     int slash=disco.lastIndexOf("/");
     int last = disco.length();
     disco=disco.mid(slash+1,last);
-    generate_graphviz_table("pdf",dot,output_path,disco,"MBR"); // var disco es el nombre del disco
+    generate_graphviz_table(choice,dot,output_path,disco,"MBR"); // var disco es el nombre del disco
 }
 
 void graficador::generate_graphviz_table(string extension,QString dot,string path,QString disco,string tipo){

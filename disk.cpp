@@ -211,6 +211,8 @@ std::string path_by_id(char unit)
     return disk_path.toStdString();
 }
 
+bool validate_mount(char name[50]);
+
 //Para generar los ID al montar los discos
 //VD % LETRA % NUMERO.
 QString generate_ID(Metadata data)
@@ -227,6 +229,10 @@ QString generate_ID(Metadata data)
     {
         //el disco ya tiene asignada una letra
         result += mounted_disks[data.path];
+        if(!validate_mount(data.name)){
+            printf("El disco ya tiene montada esta particion");
+            return "-1";
+        }
     }
 
     return result;
@@ -431,6 +437,112 @@ Mbr get_mbr(FILE* file)
     return mbr;
 }
 
+string get_report_format(string path)
+{
+    string flag = path.substr(path.find('.'), path.length());
+    QString comp = QString(flag.c_str());
+    comp = comp.toUpper();
+    if(comp.toUpper() == ".PDF"){
+        return "PDF";
+    }
+    else if(comp.toUpper() == ".PNG"){
+        return "PNG";
+    }
+    else if(comp.toUpper() == ".JPG"){
+        return "JPG";
+    }else {
+        return  "0";
+    }
+}
+
+bool low_to_high(const QPair<int,int>& e1, const QPair<int,int>& e2) { // sorting by QHash Value
+    if (e1.second < e2.second) return true;
+    return false;
+}
+
+bool high_to_low(const QPair<int,int>& e1, const QPair<int,int>& e2) { // sorting by QHash Value
+    if (e1.second > e2.second) return true;
+    return false;
+}
+
+QList<QPair<int,int>> get_list_of_spaces(Mbr mbr, int new_size)
+{
+    //este metodo me devuelve una lista con los slots vacios con la diferencia de la nueva particion
+    //guarda los indices de las particiones y su inicio
+    QList<QPair<int,int>> stack;
+    int size, diference;
+    for (int i = 0; i < 3; i++) {
+        //si tenemos un espacio vacio
+        if(mbr.partitions[i].size == 0)
+        {
+            //obtener el size correcto
+            size = mbr.partitions[i + 1].start - mbr.partitions[i].start;
+            //Si cabe en el espacio
+            if(size > new_size)
+            {
+                //para ver la diferencia de size
+                diference = size - new_size;
+
+                stack.append(qMakePair(i,diference));
+            }
+        }
+    }
+    //si tenemos un espacio vacio
+    if(mbr.partitions[3].size == 0)
+    {
+        //obtener el size correcto
+        size = mbr.size - mbr.partitions[3].start;
+        //Si cabe en el espacio
+        if(size > new_size)
+        {
+            //para ver la diferencia de size
+            diference = size - new_size;
+            stack.append(qMakePair(3,diference));
+        }
+    }
+    return  stack;
+}
+
+void print_list(QList<QPair<int,int>> stack)
+{
+    for(auto pointer : stack){
+        printf("%i",pointer.first);
+        printf("%i",pointer.second);
+        cout << "index " << pointer.first << " dif " << pointer.second;
+    }
+}
+
+int get_primary_index(char fit[2], Mbr mbr, int new_size)
+{
+    //Quitarle el -1 a los 4 espacios
+    for(int i=0;i<4;i++)
+    {
+        if(mbr.partitions[i].start==-1)
+        {//si esta particion esta llena
+            //el nuevo espacio donde se guardara
+            return i;
+        }
+    }
+
+    //Ya no tienen -1 entonces hacer el ajuste
+    auto stack = get_list_of_spaces(mbr,new_size);
+
+    if(strcmp(fit,"BF"))
+    {
+        qSort(stack.begin(),stack.end(),high_to_low);
+        return stack.first().first;
+    }
+    else if (strcmp(fit,"WF"))
+    {
+        qSort(stack.begin(),stack.end(),low_to_high);
+        return stack.first().first;
+    }
+    else
+    {
+        //First Fit
+        return stack.first().first;
+    }
+}
 /**********************************************************
  ********************** Metodos para validar parametros ***********
  ******************************************************************/
@@ -526,7 +638,6 @@ bool validate_path(char path[500])
     fix_first_slash(path);
     if(!QString(path).contains(".disk"))
     {
-        printf("Error: formato de disco no especificado (debe ser .disk)\n");
         return false;
     }
     return true;
@@ -565,6 +676,15 @@ bool validate_partition_type(char *type,Mbr mbr)
     {
         printf("Error: el numero de particiones es incorrecto\n");
         return  false;
+    }
+    return true;
+}
+
+bool validate_mount(char name[50])
+{
+    for(Partition part_point : mounted_partitions)
+    {
+        if(strcmp(part_point.name,name) == 0) return false;
     }
     return true;
 }
@@ -713,7 +833,7 @@ void disk::removeDisk(Metadata data)
     {
 
         if( remove( data.path ) != 0 )
-            printf("Error: No se pudo eliminar el disco '%s'\n",data.path);
+            printf("Error: No se pudo eliminar el disco '%s' no existente\n",data.path);
         else
             printf("Sistema: '%s' eliminado correctamente\n",data.path);
 
@@ -755,27 +875,32 @@ void disk::fDisk(Metadata data)
     if(data.Delete[0] != 0)
     {
         //Se eliminara
-        //Ver si se quiere un borrado o creacion de particion
+        //mensaje de eliminacion
+        printf("\n********************ELIMINAR PARTICION*****************"
+               "\nquieres eliminar: '%s'",data.name);
+        printf("del disco: '%s' \n",data.path);
+        printf("1.Si\n2.No\n");
+        int choice;
+        cin >> choice;
+        if(choice!=1) {
+            printf("Sistema: No se elimino la particion '%s'",data.name);
+            return;
+        }
+
+        //ver el tipo de borrado
         if(strcmp(QString(data.Delete).toUpper().toStdString().c_str(),"FULL") == 0
                 && current_partition_index != -1)
         {
-            //Piden borrar la particion en modo full
-            printf("\n********************ELIMINAR PARTICION*****************"
-                   "\nquieres eliminar: '%s' ",data.name);
-            printf("del disco: '%s' \n",data.path);
-            printf("1.Si\n2.No\n");
-            int choice = std::cin.get();
-            if(choice==49){
-                //puntero al inicio de la particion
-                fseek(file,mbr.partitions[current_partition_index].start,SEEK_SET);
-                //guardara el numero de KB de la particion
-                int fin=(mbr.partitions[current_partition_index].size/1024);
-                //Simula 1 KB
-                char buffer[1024];
-                //Lo llena de 0
-                for(int i=0;i<1024;i++){
-                    buffer[i]='\0';
-                }
+            //puntero al inicio de la particion
+            fseek(file,mbr.partitions[current_partition_index].start,SEEK_SET);
+            //guardara el numero de KB de la particion
+            int fin=(mbr.partitions[current_partition_index].size/1024);
+            //Simula 1 KB
+            char buffer[1024];
+            //Lo llena de 0
+            for(int i=0;i<1024;i++){
+                buffer[i]='\0';
+
                 int j=0;
                 //Escribe todos los KB de la particion con el KB de 0
                 while(j!=fin){
@@ -783,32 +908,115 @@ void disk::fDisk(Metadata data)
                     j++;
                 }
                 //Limpia los atributos de la particion
+                clean(mbr.partitions[current_partition_index].name,50);
+                clean(mbr.partitions[current_partition_index].fit,2);
                 mbr.partitions[current_partition_index].size = 0;
                 mbr.partitions[current_partition_index].type = 0;
                 mbr.partitions[current_partition_index].status = 0;
+                //escribe el mbr
+                fseek(file,0,SEEK_SET);//puntero al inicio del files
+                fwrite(&mbr, sizeof(Mbr), 1, file);//realiza la lectura de la estructura mbr escrita al crear el disco
                 fclose(file);
-                printf("\n**********borrado completo de particion '%s' realizado con exito**********",data.name);
+                printf("Sistema: Borrado completo de particion '%s' realizado con exito",data.name);
             }
-            else printf("************no se elimino, particion '%s'",data.name);
         }
         else if(strcmp(QString(data.Delete).toUpper().toStdString().c_str(),"FAST") == 0
                 && current_partition_index != -1)
         {
-            //Piden borrar la particion en modo rapido
-            printf("\n********************ELIMINAR PARTICION*****************"
-                   "\nquieres eliminar: '%s' ",data.name);
-            printf("del disco: '%s' \n",data.path);
-            printf("1.Si\n2.No\n");
-            int choice = std::cin.get();
-            if(choice==49){
-                //Solo se limpian los 4 atributos de una particion
-                mbr.partitions[current_partition_index].size = 0;
-                mbr.partitions[current_partition_index].type = 0;
-                mbr.partitions[current_partition_index].status = 0;
-                fclose(file);
-                printf("\n**********borrado rapido de particion '%s' realizado con exito**********",data.name);
+            //Solo se limpian los 4 atributos de una particion
+            clean(mbr.partitions[current_partition_index].name,50);
+            clean(mbr.partitions[current_partition_index].fit,2);
+            mbr.partitions[current_partition_index].size = 0;
+            mbr.partitions[current_partition_index].type = 0;
+            mbr.partitions[current_partition_index].status = 0;
+            //escribe el mbr
+            fseek(file,0,SEEK_SET);//puntero al inicio del files
+            fwrite(&mbr, sizeof(Mbr), 1, file);//realiza la lectura de la estructura mbr escrita al crear el disco
+            fclose(file);
+            printf("Sistema: Borrado rapido de particion '%s' realizado con exito",data.name);
+        }
+        else
+        {
+
+            //buscar entre las logicas
+            int extended_partition_index = get_extended_partition_index(mbr);
+            if(extended_partition_index == -1)
+            {
+                printf("Error: nombre de particion no encontrado'%s'",data.name);
+                return;
             }
-            else printf("\n************no se elimino, particion '%s'************\n",data.name);
+            Ebr ebr;
+            fseek(file,mbr.partitions[extended_partition_index].start,SEEK_SET);
+            fread(&ebr, sizeof(Ebr), 1, file);//Lee el ebr raiz
+            //buscando el nombre entre las particiones logicas
+            while(strcmp(ebr.name,data.name) != 0 && ebr.next != -1)
+            {
+                fseek(file,ebr.next,SEEK_SET);
+                fread(&ebr, sizeof(Ebr), 1, file);//Lee el ebr raiz
+            }
+            if(ebr.next == -1)
+            {
+                printf("Error: nombre de particion no encontrado: '%s'\n",data.name);
+                return;
+            }
+            //para guardar la particion logica y agregarla a ram
+            Partition logic_partition;
+            //Guardando nuestra particion en ram
+            fseek(file,ebr.start,SEEK_SET);
+            fread(&logic_partition,sizeof (Partition),1,file);
+            //Viendo el tipo de borrado
+            if(strcmp(QString(data.Delete).toUpper().toStdString().c_str(),"FULL") == 0)
+            {
+                //guardara el numero de KB de la particion
+                int fin=(logic_partition.size/1024);
+                //Simula 1 KB
+                char buffer[1024];
+                //Lo llena de 0
+                for(int i=0;i<1024;i++){
+                    buffer[i]='\0';
+                }
+                int j=0;
+                //puntero al inicio de la particion logica
+                fseek(file,ebr.start,SEEK_SET);
+                //Escribe todos los KB de la particion con el KB de 0
+                while(j!=fin){
+                    fwrite(&buffer,1024 , 1, file);
+                    j++;
+                }
+
+                //limpiando atributos de la particion
+                clean(logic_partition.name,50);
+                logic_partition.size = 0;
+                logic_partition.type = 0;
+                logic_partition.start = -1;
+                logic_partition.status = 0;
+                clean(logic_partition.fit,2);
+
+                //Guardando nuestra particion en memoria secundiaria
+                fseek(file,ebr.start,SEEK_SET);
+                fwrite(&logic_partition,sizeof (Partition),1,file);
+            }
+            else if(strcmp(QString(data.Delete).toUpper().toStdString().c_str(),"FAST") == 0)
+            {
+            }
+            else
+            {
+                printf("Error: no se elimino particion '%s' tipo de formateo invalido",data.name);
+                return;
+            }
+            //limpiando atributos del ebr
+            clean(ebr.fit,2);
+            clean(ebr.name,50);
+            //posicion donde empieza el ebr y no la particion ya que se va a borrar el inicio
+            int ebr_position = ebr.start - static_cast<int>(sizeof (Ebr));
+            ebr.start = -1;
+            ebr.status = 0;
+            //puntero al inicio del ebr
+            fseek(file,ebr_position,SEEK_SET);
+            fwrite(&ebr, sizeof(Ebr), 1, file);
+            fclose(file);
+            //output de usuario
+            printf("Sistema: se elimino con exito %s",data.name);
         }
     }
     else if(data.add != 0)
@@ -843,25 +1051,17 @@ void disk::createPartition(Metadata data,FILE* file,Mbr mbr)
     /******************************
      * CREACION DE PARTICION
      *****************************/
-    // es el primero sino cambia
-    int current_partition_index = 0;
-    //Se recorren todas las particoines para buscar un espacio vacio
-    int new_partition_start = 0;
-    //quitarle el 0 al current partition si existen particiones
-    for(int i=0;i<4;i++)
-    {
-        if(mbr.partitions[i].start!=-1)
-        {//si esta particion esta llena
-            //poner la nueva particion delante de la llena
-            //write partition = [MBR] + [PARTICION ANTERIOR]
-            new_partition_start=mbr.partitions[i].start + mbr.partitions[i].size;
-            //el nuevo espacio donde se guardara
-            current_partition_index=i+1;
-        }
-    }
-    //Si es 0 todas las particiones estan vacias
-    if(current_partition_index == 0)  mbr.partitions[0].start = sizeof (Mbr);
-    else mbr.partitions[current_partition_index].start = new_partition_start;
+    //esta sera -1 cuando sea logica
+    int current_partition_index = -1;
+    // Busca un espacio en las particiones primarias
+    if(data.type != 'L') current_partition_index = get_primary_index(data.fit,mbr,data.size);
+    //si es la posicion 0 no cambia
+    int new_partition_start = sizeof (Mbr);
+    //si es otra posicion es el start de la anterior  + su size
+    if(current_partition_index > 0 )
+        new_partition_start = mbr.partitions[current_partition_index - 1].start + mbr.partitions[current_partition_index - 1].size;
+    //Seteando el nuevo comienzo o el mismo si ya estaba, si no es logica
+    if(current_partition_index != -1) mbr.partitions[current_partition_index].start = new_partition_start;
     //si es extendida o logica necesita de un EBR
     if(data.type == 'E' || data.type == 'L')
     {
@@ -988,7 +1188,7 @@ void disk::createPartition(Metadata data,FILE* file,Mbr mbr)
     //output para el usuario
     printf("Particion creada con exito: '%s'",data.name);
     printf(", en disco %s\n",data.path);
-    read_partitions(data.path);
+    //read_partitions(data.path);
 }
 
 void disk::mountDisk(Metadata data)
@@ -998,11 +1198,6 @@ void disk::mountDisk(Metadata data)
      * VERIFICACION DE PARAMETROS
      *****************************/
     if(!validate_path(data.path)) return;
-
-
-    /******************************
-     * MONTAR DISCO
-     *****************************/
     //Abrir el file
     FILE* file = fopen(data.path, "rb+");
     //Para verificar el nombre tenemos que obtener el mbr
@@ -1013,6 +1208,15 @@ void disk::mountDisk(Metadata data)
         printf("Error al leer el disco: %s\n",data.path);
         return;
     }
+    //validar que el nombre exista
+    if(validate_partition_name(data.name,mbr) == -1){
+        printf("Error: Nombre de particion inexistente: %s\n",data.name);
+    }
+    else if(validate_partition_name(data.name,mbr) == -2) return;
+
+    /******************************
+     * MONTAR DISCO
+     *****************************/
     //Guardando el index de la particion con el nombre si no existe muestra -1
     int current_partition_index = validate_partition_name(data.name,mbr);
     //si no se encuentra entre las primarias puede que sea logica
@@ -1049,6 +1253,8 @@ void disk::mountDisk(Metadata data)
         //se busca un numero para la particion
         int partition_number = 1;
         QString new_id = generate_ID(data);
+        //si ya tenia montada una entonces salir
+        if(new_id.compare("-1") == 0) return;
         //iterar el mounted partitions <map> para buscar un numero sin usar
         while(mounted_partitions.contains(QString(new_id + "%1").arg(partition_number)))partition_number++;
         //se agrega la particion a la lista de partitions montadas
@@ -1073,14 +1279,10 @@ void disk::mountDisk(Metadata data)
         //se busca un numero para la particion
         int partition_number = 1;
         QString new_id = generate_ID(data);
+        //si ya tenia montada una entonces salir
+        if(new_id.compare("-1") == 0) return;
         //iterar el mounted partitions
-        for (int a = 0;a < 10; a++)
-        {
-            if(mounted_partitions.contains(QString(new_id + "%1").arg(partition_number)))
-            {
-                partition_number++;
-            }else break;
-        }
+        while(mounted_partitions.contains(QString(new_id + "%1").arg(partition_number)))partition_number++;
         //se agrega la particion a la lista de partitions montadas
         new_id = QString(new_id + "%1").arg(partition_number);
         mounted_partitions[new_id] = mbr.partitions[current_partition_index];
@@ -1184,7 +1386,7 @@ void disk::unmountDisk(QString unmount_id_partition)
     {
         printf("Error: al desmontar '%s', no existe el ID\n",unmount_id_partition.toStdString().c_str());
     }
-    read_mounted_partitions();
+    //read_mounted_partitions();
 }
 
 void disk::formatDisk(Metadata data)
@@ -1537,7 +1739,13 @@ void disk::makeReport(Metadata data)
     validate_path(data.path);
     //crear directorios
     make_directories(data.path);
-
+    //devuelve el formato del reporte
+    string format_type(data.path);
+    format_type = get_report_format(format_type);
+    if(format_type == "0"){
+        printf("Error: Formato del reporte erroneo");
+        return;
+    }
     if(mounted_partitions.contains(QString(data.id).toUpper()))
     {
         //encontrar el path del disco de la particion montada
@@ -1547,15 +1755,13 @@ void disk::makeReport(Metadata data)
         //comprobar si no hay error al abrir el file
         if(file != nullptr)
         {
+            Mbr mbr = get_mbr(file);
             //switching data name (case insensitive)
             QString choice = QString(data.name).toUpper();
             if(choice == "MBR")
             {
-                Mbr mbr;
-                fseek(file,0,SEEK_SET);
-                fread(&mbr,sizeof (Mbr),1,file);
                 //Mandandolo a graficar en la path indicada
-                graficador::generate_mbr_table_content(data.path,mbr);
+                graficador::generate_mbr_table_content(data.path,mbr,format_type);
             }
             else if(choice == "FILE")
             {
@@ -1563,15 +1769,12 @@ void disk::makeReport(Metadata data)
             }
             else if(choice == "DISK")
             {
-                Mbr mbr;
-                fseek(file,0,SEEK_SET);
-                fread(&mbr,sizeof (Mbr),1,file);
                 //Mandandolo a graficar en la path indicada
-                graficador::generate_dsk_table_content(data.path,mbr);
+                graficador::generate_dsk_table_content(data.path,mbr,file);
             }
             else
             {
-                printf("Error, nombre del reporte no aceptado '%s'*************\n",data.name);
+                printf("Error, nombre del reporte no aceptado '%s'\n",data.name);
             }
         }
         else
@@ -1585,6 +1788,7 @@ void disk::makeReport(Metadata data)
     }
 }
 
+//*****************AQUI TERMINA LA PRIMERA FASE ***************
 
 void disk::loss(Metadata data)
 {

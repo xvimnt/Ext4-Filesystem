@@ -23,19 +23,6 @@
 #include <node.h>
 #include <plotter.h>
 
-//********************Area de structs*******************//
-
-typedef struct
-{
-    char status;
-    char fit[2];
-    int start;
-    int size;
-    int next;
-    char name[16];
-}Ebr;
-
-
 
 //*************Diccionario de discos montados************//
 static QMap<QString,char> mounted_disks;
