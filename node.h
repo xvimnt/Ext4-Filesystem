@@ -8,8 +8,9 @@ typedef struct
   //mandatory values
   int size;
   char path[500];
-  char ruta[500];
+  char group[10];
   char name[50];
+  char user[10];
   //optional values
   char unit;
   //for partitions
@@ -17,11 +18,12 @@ typedef struct
   char format_type[5];
   char fit[2];
   //for the fs
+  char fs[3];
   char id[4];
   char Delete[4];
   int add;
   //for unmount
-  bool p_dir;
+  bool recursively;
   QString content;
 
 }Metadata;

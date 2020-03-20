@@ -1252,6 +1252,7 @@ void disk::makeGroup(Metadata data)
                     else
                     {
                         //buscar un apuntador con bloques vacios
+                        
                     }
                     break;
                 case 14:

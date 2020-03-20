@@ -23,7 +23,9 @@ SOURCES += \
     plotter.cpp \
     disk.cpp \
     io_user.cpp \
-    file_system.cpp
+    file_system.cpp \
+    validations.cpp \
+    tools.cpp
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -43,4 +45,6 @@ HEADERS += \
     lexico.l \
     sintactico.y \
     io_user.h \
-    file_system.h
+    file_system.h \
+    validations.h \
+    tools.h

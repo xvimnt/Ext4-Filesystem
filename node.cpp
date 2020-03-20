@@ -64,5 +64,13 @@ int node::getTipo()
     if(this->tipo=="tp"){return 35;}
     if(this->tipo=="mkfile"){return 36;}
     if(this->tipo=="cont"){return 37;}
+    if(this->tipo=="fs"){return 38;}
+    if(this->tipo=="rmgroup"){return 39;}
+    if(this->tipo=="grp"){return 40;}
+    if(this->tipo=="mkusr"){return 41;}
+    if(this->tipo=="rmusr"){return 42;}
+    if(this->tipo=="chmod"){return 43;}
+    if(this->tipo=="ugo"){return 44;}
+    if(this->tipo=="tr"){return 45;}
     return 0;
 }

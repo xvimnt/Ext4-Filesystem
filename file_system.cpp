@@ -1,13 +1,18 @@
 #include "file_system.h"
 
-int  file_system::structures_number(int Tparticion)
+int  file_system::structures_number(int fs, int partition_size)
 {
-    int tamsuperbloque=sizeof(SuperBloque);
-    int tamAVD=sizeof(AVD);
-    int tamDetalleDirectorio=sizeof(DD);
-    int tamInodo=sizeof(iNodo);
+    double sb = sizeof (struct::SuperBloque);
+    double inode = sizeof(iNodo);
+    double block =  sizeof (Bloque_Archivo);
+    double journal = sizeof (Bitacora);
 
-    return (Tparticion-(2*tamsuperbloque))/(27+tamAVD+tamDetalleDirectorio+(5*tamInodo)+(20*sizeof(Bloque))+sizeof(Bitacora));
+    double structures_size = 4 + 3 * block + inode;
+    if(fs == 3) structures_size += journal;
+
+    double free_space = partition_size - sb;
+
+    return static_cast<int>(floor(free_space / structures_size));
 }
 
 file_system::file_system()

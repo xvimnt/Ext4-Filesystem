@@ -40,7 +40,15 @@ enum Choice
     MKDIR = 34,
     PCREATION = 35,
     MKFILE = 36,
-    CONTENT = 37
+    CONTENT = 37,
+    FS = 38,
+    REMOVEGROUP = 39,
+    GROUP = 40,
+    MAKEUSER = 41,
+    REMOVEUSER = 42,
+    CHMOD = 43,
+    UGO = 44,
+    R = 45
 };
 
 semantic::semantic()
@@ -65,6 +73,18 @@ node *semantic::compute(node *node_){
             node * tempData = compute(son);
             switch (tempData->tipo_)
             {
+            case ADD:
+                //colocar el size al nuevo disco
+                result->metadata.add = tempData->valor.toInt();
+                break;
+            case UGO:
+                //colocar el size al nuevo disco
+                result->metadata.add = tempData->valor.toInt();
+                break;
+            case R:
+                //colocar el size al nuevo disco
+                result->metadata.recursively = true;
+                break;
             case SIZE:
                 //colocar el size al nuevo disco
                 result->metadata.size = tempData->valor.toInt();
@@ -73,10 +93,6 @@ node *semantic::compute(node *node_){
                 //colocar el path al nuevo disco
                 if(tempData->valor.length() > 2) memcpy(result->metadata.path, tempData->valor.toStdString().c_str(),tempData->valor.size());
                 else result->metadata.path[0] = 0;
-                break;
-            case RUTA:
-                //colocar el path al nuevo disco
-                memcpy(result->metadata.ruta, tempData->valor.toStdString().c_str(),tempData->valor.size());
                 break;
             case NAME:
                 //colocar el nombre al nuevo disco
@@ -93,17 +109,23 @@ node *semantic::compute(node *node_){
                 }
                 else
                 {
-                    strcpy(result->metadata.format_type,tempData->valor.toStdString().c_str());
+                    strcpy(result->metadata.format_type,tempData->valor.toUpper().toStdString().c_str());
                 }
                 break;
             case ID:
                 strcpy(result->metadata.id,tempData->valor.toStdString().c_str());
                 break;
+            case FS:
+                strcpy(result->metadata.fs,tempData->valor.toUpper().toStdString().c_str());
+                break;
             case DELETE:
                 strcpy(result->metadata.Delete,tempData->valor.toStdString().c_str());
                 break;
             case USR:
-                strcpy(result->metadata.name,tempData->valor.toStdString().c_str());
+                strcpy(result->metadata.user,tempData->valor.toStdString().c_str());
+                break;
+            case GROUP:
+                strcpy(result->metadata.group,tempData->valor.toStdString().c_str());
                 break;
             case PWD:
                 strcpy(result->metadata.path,tempData->valor.toStdString().c_str());
@@ -114,9 +136,6 @@ node *semantic::compute(node *node_){
             case FIT:
                 if(tempData->valor.length() == 2) strcpy(result->metadata.fit,tempData->valor.toUpper().toStdString().c_str());
                 else result->metadata.fit[0] = 'x';
-                break;
-            case PCREATION:
-                result->metadata.p_dir = true;
                 break;
             default:
                 qDebug() << "******Error Semantico, comando no aceptado******" << tempData->tipo;
@@ -162,6 +181,19 @@ node *semantic::compute(node *node_){
             break;
             //COMANDOS PARA EL FS
         case MAKEGROUP:
+            command.makeGroup(compute(node_->hijos[1])->metadata);
+            break;
+        case MAKEUSER:
+            command.makeUser(compute(node_->hijos[1])->metadata);
+            break;
+        case REMOVEUSER:
+            command.removeUser(compute(node_->hijos[1])->metadata);
+            break;
+        case REMOVEGROUP:
+            command.removeGroup(compute(node_->hijos[1])->metadata);
+            break;
+        case CHMOD:
+            command.chmod(compute(node_->hijos[1])->metadata);
             break;
         case MAKEFS:
             command.formatDisk(compute(node_->hijos[1])->metadata);
@@ -170,19 +202,19 @@ node *semantic::compute(node *node_){
             command.makeReport(compute(node_->hijos[1])->metadata);
             break;
         case RECOVERY:
-            command.recovery(compute(node_->hijos[1])->metadata);
+            //command.recovery(compute(node_->hijos[1])->metadata);
             break;
         case LOSS:
-            command.loss(compute(node_->hijos[1])->metadata);
+            //command.loss(compute(node_->hijos[1])->metadata);
             break;
         case LOGIN:
             command.login(compute(node_->hijos[1])->metadata);
             break;
         case MKDIR:
-            command.makeDir(compute(node_->hijos[1])->metadata);
+            //command.makeDir(compute(node_->hijos[1])->metadata);
             break;
         case MKFILE:
-            command.makeFile(compute(node_->hijos[1])->metadata);
+            //command.makeFile(compute(node_->hijos[1])->metadata);
             break;
         }
         break;

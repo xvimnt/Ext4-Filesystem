@@ -53,6 +53,7 @@ int yyerror(const char* msj)
 //aqui inician los tokens del fs
 %token <TEXT>tlogin
 %token <TEXT>tmkfs
+%token <TEXT>tfs
 %token <TEXT>tusr
 %token <TEXT>tpwd
 %token <TEXT>tlogout
@@ -113,6 +114,7 @@ COMMAND_TYPE: tmkdisk { $$ = new node(yylineno, columna,"mkdisk",yytext);}
     | tunmount { $$ = new node(yylineno, columna,"unmount",yytext);}
     | texec { $$ = new node(yylineno, columna,"exec",yytext);}
     | tmkgrp { $$ = new node(yylineno, columna,"makegroup",yytext);}
+    | trmgrp { $$ = new node(yylineno, columna,"rmgroup",yytext);}
     | tmkfs { $$ = new node(yylineno, columna,"makefs",yytext);}
     | trep { $$ = new node(yylineno, columna,"rep",yytext);}
     | trecovery { $$ = new node(yylineno, columna,"recovery",yytext);}
@@ -120,7 +122,11 @@ COMMAND_TYPE: tmkdisk { $$ = new node(yylineno, columna,"mkdisk",yytext);}
     | tlogin { $$ = new node(yylineno, columna,"login",yytext);}
     | tmkdir { $$ = new node(yylineno, columna,"mkdir",yytext);}
     | tmkfile { $$ = new node(yylineno, columna,"mkfile",yytext);}
+    | tmkusr { $$ = new node(yylineno, columna,"mkusr",yytext);}
+    | trmusr { $$ = new node(yylineno, columna,"rmusr",yytext);}
+    | tchmod { $$ = new node(yylineno, columna,"chmod",yytext);}
 ;
+
 
 COMMAND_ATTRIB_LIST: COMMAND_ATTRIB_LIST ATTRIB{
                                                     $$ = $1;
@@ -138,6 +144,7 @@ ATTRIB:  ATTRIB_NAME equal VALUE {
                                         $$->add($3);
                                       }
         | tpcreation { $$ = new node(yylineno, columna,"tp",yytext);}
+        | tplusr { $$ = new node(yylineno, columna,"tr",yytext);}
 ;
 
 VALUE: tiden { $$ = new node(yylineno, columna,"iden",yytext);}
@@ -154,10 +161,13 @@ ATTRIB_NAME: tsize { $$ = new node(yylineno, columna,"size",yytext);}
         |tdelete { $$ = new node(yylineno, columna,"delete",yytext);}
         |tname { $$ = new node(yylineno, columna,"name",yytext);}
         |tadd { $$ = new node(yylineno, columna,"add",yytext);}
+        |tfs { $$ = new node(yylineno, columna,"fs",yytext);}
         |tid { $$ = new node(yylineno, columna,"id",yytext);}
+        | tgrp  { $$ = new node(yylineno, columna,"grp",yytext);}
         | tusr  { $$ = new node(yylineno, columna,"usr",yytext);}
         | tpwd { $$ = new node(yylineno, columna,"pwd",yytext);}
         | truta { $$ = new node(yylineno, columna,"ruta",yytext);}
         | tcont { $$ = new node(yylineno, columna,"cont",yytext);}
+        | tugo { $$ = new node(yylineno, columna,"ugo",yytext);}
 ;
 %%

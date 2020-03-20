@@ -24,8 +24,8 @@
 %option outfile="scanner.cpp"
 
 digit [0-9]
-integer {digit}+
-number {digit}+("."{digit}+)
+integer "-"?{digit}+
+number "-"?{digit}+("."{digit}+)
 letra [a-zñA-ZÑ]+
 decimal [0-9]+"."[0-9]+
 iden {letra}({letra}|{digit}|"_")*
@@ -53,6 +53,7 @@ INITIAL
     "=" 	{ columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return equal;}
     "login"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tlogin;}
     "-usr"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tusr;}
+    "-fs"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tfs;}
     "-pwd"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tpwd;}
     "logout"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tlogout;}
     "mkgrp"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tmkgrp;}

@@ -70,7 +70,7 @@ void graficador:: generarImagen()
     QString cadenaComando = "dot -Tjpg grafo.txt -o grafo.jpg ";
     system(cadenaComando.toUtf8().constData());
 }
-
+/*
 void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
 
     //HTML Rows
@@ -365,7 +365,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
     generate_graphviz_table("PDF",dot,output_path,disco,"SB");
 
 }
-
+*/
 static void GrapvizDisco(string extension, QString dot, string path){
     QString sb =
             "        digraph D {"
@@ -419,7 +419,7 @@ void graficador::generate_dsk_table_content(string output_path,Mbr mbr,FILE *fil
     QString label[4];
     int numerovacias=0;int ocupado=0;
     for(int i=0;i<4;i++){
-        if(mbr.partitions[i].start==-1){
+        if(mbr.partitions[i].size==0){
             numerovacias++;
         }else{
             if(mbr.partitions[i].type=='E'){
@@ -433,7 +433,7 @@ void graficador::generate_dsk_table_content(string output_path,Mbr mbr,FILE *fil
                 fseek(file,mbr.partitions[i].start,SEEK_SET);
                 fread(&ebr, sizeof(Ebr), 1, file);//Lee el ebr raiz
                 //buscando el nombre entre las particiones logicas
-                while(ebr.next != -1)
+                while(ebr.next != -1 && ebr.next != 0)
                 {
                     if(ebr.start == -1)
                     {
@@ -607,6 +607,72 @@ void graficador::generate_mbr_table_content(string output_path,Mbr mbr, string c
     generate_graphviz_table(choice,dot,output_path,disco,"MBR"); // var disco es el nombre del disco
 }
 
+void graficador::generate_ebr_table_content(string output_path,Ebr ebr, string choice)
+{
+    // genero las filas del html
+    QString ssize=std::to_string(ebr.size).c_str();
+    QString sstart=std::to_string(ebr.start).c_str();
+    QString sstatus=std::to_string(ebr.status).c_str();
+    QString snext=std::to_string(ebr.next).c_str();
+
+
+    QString dot= "            <TR> \n"
+                 "                <TD>EBR_size</TD> \n"
+                 "                <TD>"
+                 "                    <TABLE BORDER=\"0\"> \n"
+                 "                        <TR><TD>"+ssize+"</TD></TR> \n"
+                                                          "                    </TABLE> \n"
+                                                          "                </TD> \n"
+                                                          "            </TR> \n";
+    dot+="            <TR> \n"
+         "                <TD> EBR_FIT </TD> \n"
+         "                <TD> \n"
+         "                    <TABLE BORDER=\"0\"> \n"
+         "                        <TR><TD>"+QString(ebr.fit)+"</TD></TR> \n"
+                                                  "                    </TABLE> \n"
+                                                  "                </TD> \n"
+                                                  "            </TR> \n";
+    dot+="            <TR> \n"
+         "                <TD> EBR_START </TD> \n"
+         "                <TD> \n"
+         "                    <TABLE BORDER=\"0\"> \n"
+         "                        <TR><TD>"+sstart+"</TD></TR> \n"
+                                                "                    </TABLE> \n"
+                                                "                </TD> \n"
+                                                "            </TR> \n";
+    dot+="            <TR> \n"
+         "                <TD> EBR_SIZE </TD> \n"
+         "                <TD> \n"
+         "                    <TABLE BORDER=\"0\"> \n"
+         "                        <TR><TD>"+ssize+"</TD></TR> \n"
+                                                "                    </TABLE> \n"
+                                                "                </TD> \n"
+                                                "            </TR> \n";
+    dot+="            <TR> \n"
+         "                <TD> EBR_NEXT </TD> \n"
+         "                <TD> \n"
+         "                    <TABLE BORDER=\"0\"> \n"
+         "                        <TR><TD>"+snext+"</TD></TR> \n"
+                                                "                    </TABLE> \n"
+                                                "                </TD> \n"
+                                                "            </TR> \n";
+    dot+="            <TR> \n"
+         "                <TD> EBR_NAME </TD> \n"
+         "                <TD> \n"
+         "                    <TABLE BORDER=\"0\"> \n"
+         "                        <TR><TD>"+QString(ebr.name)+"</TD></TR> \n"
+                                                "                    </TABLE> \n"
+                                                "                </TD> \n"
+                                                "            </TR> \n";
+    QString disco=ebr.name;
+    int slash=QString(output_path.c_str()).lastIndexOf("/");
+    QString new_path = QString(output_path.c_str()).mid(0,slash + 1);
+    new_path.append(disco);
+    new_path.append(".");
+    new_path.append(QString(choice.c_str()).toLower());
+    generate_graphviz_table(choice,dot,new_path.toStdString(),disco,"MBR"); // var disco es el nombre del disco
+}
+
 void graficador::generate_graphviz_table(string extension,QString dot,string path,QString disco,string tipo){
     QString sb =
             "digraph test {"
@@ -667,12 +733,7 @@ void graficador::generate_graphviz_table(string extension,QString dot,string pat
 
 }
 
-int graficador::get_structures_number(int SizeParticion){
-    int valor=0;
-    valor = (SizeParticion-(2*sizeof (SuperBloque)))/(27+sizeof (AVD) + sizeof (DD) + (5*sizeof (iNodo))+(20*sizeof (Bloque))+sizeof (Bitacora));
-    return valor;
-}
-
+/*
 void graficador::generate_bitmap(SuperBloque sb,QString choice,int partition_size,string output_path,FILE *file)
 { // el path es de la vda int star es el inicio de la particion y tambien tengo que mandar el tamaño de la particion
     //eligiendo el reporte que queremos
@@ -874,3 +935,4 @@ void graficador::generate_bitmap(SuperBloque sb,QString choice,int partition_siz
     fclose(file);
 }
 
+*/

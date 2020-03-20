@@ -72,37 +72,38 @@ extern int yydebug;
     linux_path = 278,
     tlogin = 279,
     tmkfs = 280,
-    tusr = 281,
-    tpwd = 282,
-    tlogout = 283,
-    tmkgrp = 284,
-    trmgrp = 285,
-    tmkusr = 286,
-    tgrp = 287,
-    trmusr = 288,
-    tchmod = 289,
-    tugo = 290,
-    tplusr = 291,
-    tmkfile = 292,
-    tpcreation = 293,
-    tcont = 294,
-    tcat = 295,
-    tren = 296,
-    tmkdir = 297,
-    tcp = 298,
-    tdestiny = 299,
-    tiddestiny = 300,
-    tmv = 301,
-    tfind = 302,
-    tchown = 303,
-    trep = 304,
-    tchgrp = 305,
-    texec = 306,
-    tpause = 307,
-    trecovery = 308,
-    tloss = 309,
-    truta = 310,
-    tidn = 311
+    tfs = 281,
+    tusr = 282,
+    tpwd = 283,
+    tlogout = 284,
+    tmkgrp = 285,
+    trmgrp = 286,
+    tmkusr = 287,
+    tgrp = 288,
+    trmusr = 289,
+    tchmod = 290,
+    tugo = 291,
+    tplusr = 292,
+    tmkfile = 293,
+    tpcreation = 294,
+    tcont = 295,
+    tcat = 296,
+    tren = 297,
+    tmkdir = 298,
+    tcp = 299,
+    tdestiny = 300,
+    tiddestiny = 301,
+    tmv = 302,
+    tfind = 303,
+    tchown = 304,
+    trep = 305,
+    tchgrp = 306,
+    texec = 307,
+    tpause = 308,
+    trecovery = 309,
+    tloss = 310,
+    truta = 311,
+    tidn = 312
   };
 #endif
 
@@ -115,7 +116,7 @@ union YYSTYPE
   char TEXT [256];
   class node *Node;
 
-#line 119 "parser.h"
+#line 120 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
