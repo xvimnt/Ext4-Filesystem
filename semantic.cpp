@@ -48,7 +48,9 @@ enum Choice
     REMOVEUSER = 42,
     CHMOD = 43,
     UGO = 44,
-    R = 45
+    R = 45,
+    CAT = 46,
+    TFILE = 47
 };
 
 semantic::semantic()
@@ -73,6 +75,9 @@ node *semantic::compute(node *node_){
             node * tempData = compute(son);
             switch (tempData->tipo_)
             {
+            case TFILE:
+                strcpy(result->metadata.path,tempData->valor.toStdString().c_str());
+                break;
             case ADD:
                 //colocar el size al nuevo disco
                 result->metadata.add = tempData->valor.toInt();
@@ -85,13 +90,18 @@ node *semantic::compute(node *node_){
                 //colocar el size al nuevo disco
                 result->metadata.recursively = true;
                 break;
+            case PCREATION:
+                //colocar el size al nuevo disco
+                result->metadata.recursively = true;
+                break;
             case SIZE:
                 //colocar el size al nuevo disco
                 result->metadata.size = tempData->valor.toInt();
                 break;
             case PATH:
                 //colocar el path al nuevo disco
-                if(tempData->valor.length() > 2) memcpy(result->metadata.path, tempData->valor.toStdString().c_str(),tempData->valor.size());
+                if(tempData->valor.length() > 2)
+                    strcpy(result->metadata.path, tempData->valor.toStdString().c_str());
                 else result->metadata.path[0] = 0;
                 break;
             case NAME:
@@ -137,8 +147,12 @@ node *semantic::compute(node *node_){
                 if(tempData->valor.length() == 2) strcpy(result->metadata.fit,tempData->valor.toUpper().toStdString().c_str());
                 else result->metadata.fit[0] = 'x';
                 break;
+            case RUTA:
+                //colocar en el nombre la ruta de linux
+                strcpy(result->metadata.ruta, tempData->valor.toStdString().c_str());
+                break;
             default:
-                qDebug() << "******Error Semantico, comando no aceptado******" << tempData->tipo;
+                qDebug() << "Error Semantico, comando no aceptado" << tempData->tipo;
                 break;
             }
         }
@@ -161,6 +175,9 @@ node *semantic::compute(node *node_){
         {
         case EXEC:
             io_user::read_from_file(compute(node_->hijos[1])->metadata);
+            break;
+        case CAT:
+            command.showFile(compute(node_->hijos[1])->metadata,false);
             break;
         case RMDISK:
             //elimina el disco
@@ -202,10 +219,10 @@ node *semantic::compute(node *node_){
             command.makeReport(compute(node_->hijos[1])->metadata);
             break;
         case RECOVERY:
-            //command.recovery(compute(node_->hijos[1])->metadata);
+            command.recovery(compute(node_->hijos[1])->metadata);
             break;
         case LOSS:
-            //command.loss(compute(node_->hijos[1])->metadata);
+            command.loss(compute(node_->hijos[1])->metadata);
             break;
         case LOGIN:
             command.login(compute(node_->hijos[1])->metadata);
@@ -214,7 +231,7 @@ node *semantic::compute(node *node_){
             //command.makeDir(compute(node_->hijos[1])->metadata);
             break;
         case MKFILE:
-            //command.makeFile(compute(node_->hijos[1])->metadata);
+            command.makeFile(compute(node_->hijos[1])->metadata);
             break;
         }
         break;

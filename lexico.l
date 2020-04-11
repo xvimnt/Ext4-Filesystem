@@ -35,6 +35,9 @@ path  ("/"|{letra})({letra}|{digit}|"_"|"/"|".")*
 %%
 INITIAL
 {
+
+    "-p"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tpcreation;}
+    "-cont"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return truta;}
     "-size"  	   { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tsize;}
     "-fit"   { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tfit;}
     "-unit" 	   { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tunit;}
@@ -53,6 +56,8 @@ INITIAL
     "=" 	{ columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return equal;}
     "login"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tlogin;}
     "-usr"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tusr;}
+    "2fs"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return t2fs;}
+    "3fs"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return t3fs;}
     "-fs"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tfs;}
     "-pwd"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tpwd;}
     "logout"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tlogout;}
@@ -64,9 +69,8 @@ INITIAL
     "chmod"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tchmod;}
     "-ugo"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tugo;}
     "-r"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tplusr;}
+    "-ruta"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return truta;}
     "mkfile"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tmkfile;}
-    "-p"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tpcreation;}
-    "-cont"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tcont;}
     "cat"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tcat;}
     "rm"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tmkgrp;}
     "edit"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tmkgrp;}
@@ -78,13 +82,13 @@ INITIAL
     "-iddestiny"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tiddestiny;}
     "mv"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tmv;}
     "find"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tfind;}
+    "-file"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tfile;}
     "chown"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tchown;}
     "chgrp"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tchgrp;}
     "exec"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return texec;}
     "pause"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tpause;}
     "recovery"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return trecovery;}
     "loss"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tloss;}
-    "-ruta"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return truta;}
     {iden}     { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return(tiden);}
     {integer}     { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return(integer);}
     {String}     { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return(String);}

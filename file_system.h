@@ -2,8 +2,11 @@
 #define FILE_SYSTEM_H
 #include <ctime>
 #include <cmath>
-#include <string>
+#include <stdio.h>
+#include <string.h>
+#include <iostream>
 using namespace std;
+
 
 typedef struct
 {
@@ -104,6 +107,7 @@ typedef struct content
     }
     content(string name, int inode)
     {
+        for (int i =0;i <12;i++) b_name[i] = '\0';
         for (unsigned int i =0;i <name.size();i++) b_name[i] = name[i];
         b_inodo = inode;
     }
@@ -112,10 +116,6 @@ typedef struct content
 typedef struct Bloque_Carpeta
 {
     content* b_content[4];
-    Bloque_Carpeta()
-    {
-        for(auto cont : b_content) cont = new content();
-    }
 }Bloque_Carpeta;
 
 typedef  struct Bloque_Archivo
@@ -144,16 +144,23 @@ typedef struct Bloque_apuntador
 
 typedef struct Bitacora
 {
-    char log_tipo_operacion;
-    char log_tipo;
-    char log_nombre[100];
-    char log_contenido;
-    char log_fecha[20];
+    char log_tipo_operacion[10];
+    char log_ruta[100];
+    char log_contenido[203];
+    time_t log_fecha;
     Bitacora()
     {
-        log_tipo_operacion = 'N';
-        log_tipo = 'N';
-        log_contenido = 'N';
+        for(int i = 0; i < 10; i++) log_tipo_operacion[i] = '\0';
+        for (int i =0;i<203;i++) log_contenido[i] = '\0';
+        for (int i =0;i<100;i++) log_ruta[i] = '\0';
+        log_fecha = 0;
+    }
+    Bitacora(char *type, char* ruta,string content)
+    {
+        strcpy(log_tipo_operacion,type);
+        strcpy(log_ruta,ruta);
+        strcpy(log_contenido,content.c_str());
+        log_fecha = time(nullptr);
     }
 }Bitacora;
 
@@ -204,7 +211,7 @@ typedef struct SuperBloque
         int st_number = file_system::structures_number(fs,current_p.size);
         // inicio de direcciones de estructuras
         s_bm_inode_start = current_p.start + static_cast<int>(sizeof (SuperBloque));
-        if(fs == 3) s_bm_inode_start += static_cast<int>(sizeof (Bitacora));
+        if(fs == 3) s_bm_inode_start += st_number * static_cast<int>(sizeof (Bitacora));
         s_bm_block_start = s_bm_inode_start + st_number;
         s_inode_start = s_bm_block_start + ( st_number * 3 );
         s_block_start = s_inode_start + st_number * static_cast<int>(sizeof (iNodo));

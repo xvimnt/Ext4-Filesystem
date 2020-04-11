@@ -174,14 +174,15 @@ bool validations::validate_format_type(char* type){
 
 bool validations::validate_fs(char* fs)
 {
+    QString fileS = QString(fs);
     if(fs[0] == 0)
     {
         strcpy(fs,"2FS");
         return true;
     }
-    if(strcmp(fs,"2FS") == 0) return true;
-    if(strcmp(fs,"3FS") == 0) return true;
-
+    if(fs[0] == '2') return true;
+    if(fs[0] == '3') return true;
+    printf("Error: Sistema de archivos no valido %s",fs);
     return false;
 }
 

@@ -85,6 +85,9 @@ int yyerror(const char* msj)
 %token <TEXT>tloss
 %token <TEXT>truta
 %token <TEXT>tidn
+%token <TEXT>tfile
+%token <TEXT>t2fs
+%token <TEXT>t3fs
 
 %type <Node> START
 %type <Node> COMMAND
@@ -125,6 +128,7 @@ COMMAND_TYPE: tmkdisk { $$ = new node(yylineno, columna,"mkdisk",yytext);}
     | tmkusr { $$ = new node(yylineno, columna,"mkusr",yytext);}
     | trmusr { $$ = new node(yylineno, columna,"rmusr",yytext);}
     | tchmod { $$ = new node(yylineno, columna,"chmod",yytext);}
+    | tcat { $$ = new node(yylineno, columna,"cat",yytext);}
 ;
 
 
@@ -151,6 +155,8 @@ VALUE: tiden { $$ = new node(yylineno, columna,"iden",yytext);}
     | integer { $$ = new node(yylineno, columna,"number",yytext);}
     | String { $$ = new node(yylineno, columna,"string",yytext);}
     | linux_path { $$ = new node(yylineno, columna,"l_path",yytext);}
+    | t2fs { $$ = new node(yylineno, columna,"2fs",yytext);}
+    | t3fs { $$ = new node(yylineno, columna,"3fs",yytext);}
 ;
 
 ATTRIB_NAME: tsize { $$ = new node(yylineno, columna,"size",yytext);}
@@ -169,5 +175,6 @@ ATTRIB_NAME: tsize { $$ = new node(yylineno, columna,"size",yytext);}
         | truta { $$ = new node(yylineno, columna,"ruta",yytext);}
         | tcont { $$ = new node(yylineno, columna,"cont",yytext);}
         | tugo { $$ = new node(yylineno, columna,"ugo",yytext);}
+        | tfile { $$ = new node(yylineno, columna,"file",yytext);}
 ;
 %%

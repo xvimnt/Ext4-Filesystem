@@ -43,6 +43,7 @@ void makeDir(Metadata data);
 void makeFile(Metadata data);
 void makeUser(Metadata data);
 void removeUser(Metadata data);
+void showFile(Metadata data, bool gnt_report);
 void chmod(Metadata data);
 void recovery(Metadata data);
 void loss(Metadata data);

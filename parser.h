@@ -103,7 +103,10 @@ extern int yydebug;
     trecovery = 309,
     tloss = 310,
     truta = 311,
-    tidn = 312
+    tidn = 312,
+    tfile = 313,
+    t2fs = 314,
+    t3fs = 315
   };
 #endif
 
@@ -116,7 +119,7 @@ union YYSTYPE
   char TEXT [256];
   class node *Node;
 
-#line 120 "parser.h"
+#line 123 "parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

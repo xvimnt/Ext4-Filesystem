@@ -8,6 +8,7 @@ typedef struct
   //mandatory values
   int size;
   char path[500];
+  char ruta[500];
   char group[10];
   char name[50];
   char user[10];

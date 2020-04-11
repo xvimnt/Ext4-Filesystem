@@ -72,5 +72,7 @@ int node::getTipo()
     if(this->tipo=="chmod"){return 43;}
     if(this->tipo=="ugo"){return 44;}
     if(this->tipo=="tr"){return 45;}
+    if(this->tipo=="cat"){return 46;}
+    if(this->tipo=="file"){return 47;}
     return 0;
 }

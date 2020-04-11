@@ -826,29 +826,33 @@ void disk::unmountDisk(QString unmount_id_partition)
 
 void disk::makeReport(Metadata data)
 {
+
+    set_count(0);
     //arreglar el path
     validate_path(data.path,true);
     //crear directorios
     make_directories(data.path);
     //devuelve el formato del reporte
-    string format_type(data.path);
-    format_type = get_report_format(format_type);
-    if(format_type == "0"){
+    string format_type = get_report_format(data.path);
+    if(format_type == ""){
         printf("Error: Formato del reporte erroneo");
         return;
     }
     if(mounted_partitions.contains(QString(data.id).toUpper()))
     {
+        Partition current_partition = mounted_partitions[QString(data.id).toUpper()];
         //encontrar el path del disco de la particion montada
         std::string disk_path = path_by_id(QChar(data.id[2]).toUpper().toLatin1());
         //abrir el disco para escribir en el
         FILE* file= fopen(disk_path.c_str(), "rb+");
+        //leyendo el superbloque de la particion
+        SuperBloque sb = get_part_sb(file,current_partition.start);
         //comprobar si no hay error al abrir el file
         if(file != nullptr)
         {
             Mbr mbr = get_mbr(file);
             //switching data name (case insensitive)
-            QString choice = QString(data.name).toUpper();
+            QString choice = QString(data.name).toUpper().simplified();
             if(choice == "MBR")
             {
                 //Mandandolo a graficar en la path indicada
@@ -872,15 +876,105 @@ void disk::makeReport(Metadata data)
                     }
                 }
             }
-            else if(choice == "FILE")
-            {
-
-            }
             else if(choice == "DISK")
             {
                 //Mandandolo a graficar en la path indicada
                 graficador::generate_dsk_table_content(data.path,mbr,file);
             }
+            else if(choice == "SB")
+            {
+                //Mandandolo a graficar en la path indicada
+                graficador::generate_SB_table_content(data.path,sb);
+            }
+            else if(choice == "BM_INODE")
+            {
+                //Mandandolo a graficar en la path indicada
+                graficador::generate_bitmap(sb,"bm_inode",current_partition.size,
+                                            data.path,file,current_partition.type);
+            }
+            else if(choice == "BM_BLOCK")
+            {
+                //Mandandolo a graficar en la path indicada
+                graficador::generate_bitmap(sb,"bm_block",current_partition.size,
+                                            data.path,file,current_partition.type - '0');
+            }
+            else if(choice == "TREE")
+            {
+                //Mandandolo a graficar en la path indicada
+                graficador::generate_tables(data.path,QString().fromStdString(format_type),file,1,sb);
+            }
+            else if(choice == "INODE")
+            {
+                graficador::generate_tables(data.path,QString().fromStdString(format_type),file,2,sb);
+            }
+            else if(choice == "BLOCK")
+            {
+                graficador::generate_tables(data.path,QString().fromStdString(format_type),file,3,sb);
+            }
+
+            else if(choice == "FILE")
+            {
+                if(get_deleted())
+                {
+                    printf("Sistema: Ruta inexistente %s",data.ruta);
+                    return;
+                }
+                fix_path(data.ruta,500);
+                iNodo temp;
+                int direction = find_inode(file,sb,QString(data.ruta));
+                if(direction != 0)
+                {
+                    fseek(file,direction,SEEK_SET);
+                    fread(&temp, sizeof(iNodo), 1, file);
+                    //ver su es inodo de carpeta para mostrar el ls
+                    graficador::generate_file_report(get_full_file(temp,file).toStdString(),data.path);
+                }
+                else
+                {
+                    printf("Sistema: Ruta inexistente %s",data.ruta);
+                }
+            }
+            else if(choice == "LS")
+            {
+                if(get_deleted())
+                {
+                    printf("Sistema: Ruta inexistente %s",data.ruta);
+                    return;
+                }
+                fix_path(data.ruta,500);
+                //leer el inodo de usuarios para ver su contenido
+                iNodo temp;
+                int users_dir = sb.s_inode_start + static_cast<int>(sizeof (iNodo));
+                fseek(file,users_dir,SEEK_SET);
+                fread(&temp, sizeof(iNodo), 1, file);
+                //separar los usuarios
+                QStringList lines = get_full_file(temp,file).remove("\001").split('\n');
+                //obtener el inodo que buscamos
+                int direction = find_inode(file,sb,QString(data.ruta));
+                if(direction != 0)
+                {
+                    fseek(file,direction,SEEK_SET);
+                    fread(&temp, sizeof(iNodo), 1, file);
+                    //ver su es inodo de carpeta para mostrar el ls
+                    print_ls(file,temp,lines);
+                }
+                else
+                {
+                    printf("Sistema: Ruta inexistente %s",data.ruta);
+                }
+
+            }
+            else if(choice == "JOURNALING")
+            {
+                if(sb.s_filesystem_type != 3)
+                {
+                    printf("Error: tipo de sistema no aplicable a esta opcion\n");
+                    return;
+                }
+                graficador::generate_tables(data.path,QString().fromStdString(format_type),file,current_partition.start
+                                            + static_cast<int>(sizeof (SuperBloque)),sb);
+            }
+
             else
             {
                 printf("Error, nombre del reporte no aceptado '%s'\n",data.name);
@@ -907,7 +1001,7 @@ void disk::formatDisk(Metadata data)
     Partition current_partition = get_mounted_partition(data.id);
     if(current_partition.start == -1)
     {//si la particion no esta montada
-        printf("Error: al formatear, la particion '%s' no esta montada", data.id);
+        printf("Error:  la particion '%s' no esta montada", data.id);
         return;
     }
     if(!validate_format_type(data.format_type)) return;
@@ -932,6 +1026,7 @@ void disk::formatDisk(Metadata data)
     //si es ext3 escribir el journaling
     if(data.fs[0] == '3')
     {
+        fseek(file,current_partition.start + static_cast<int>(sizeof (SuperBloque)),SEEK_SET);
         fwrite(&*Log, sizeof(Bitacora), 1, file);
     }
     //escribir los bitmaps y tenerlos en 0
@@ -966,8 +1061,10 @@ void disk::formatDisk(Metadata data)
     iNodo *folder_inode = new iNodo(1,1,users.size(),0,770);
     folder_inode->i_block[0] = super->s_block_start;
     //bloque de carpeta root que apunta al inodo del archivo
-    Bloque_Carpeta *folder_block = new Bloque_Carpeta();
-    folder_block->b_content[0] = new content("users.txt",super->s_inode_start + static_cast<int>(sizeof (iNodo)));
+    Bloque_Carpeta folder_block;
+    //seteando a 0 los demas bloques y metiendo en el primero el user txt
+    for(int i = 1; i < 4; i++) folder_block.b_content[i] = new content();
+    folder_block.b_content[0] = new content("users.txt",super->s_inode_start + static_cast<int>(sizeof (iNodo)));
     //inodo del archivo
     iNodo *file_inode = new iNodo(1,1,users.size(),1,770);
     //bloque del archivo
@@ -978,8 +1075,7 @@ void disk::formatDisk(Metadata data)
     fwrite(&*folder_inode, sizeof(iNodo), 1, file);
     free(folder_inode);
     fseek(file,super->s_block_start,SEEK_SET);
-    fwrite(&*folder_block, sizeof(Bloque_Carpeta), 1, file);
-    free(folder_block);
+    fwrite(&folder_block, sizeof(Bloque_Carpeta), 1, file);
     fseek(file,super->s_inode_start + static_cast<int>(sizeof (iNodo)),SEEK_SET);
     fwrite(&*file_inode, sizeof(iNodo), 1, file);
     free(file_inode);
@@ -1009,7 +1105,7 @@ void disk::login(Metadata data)
         Partition current_partition = get_mounted_partition(data.id);
         if(current_partition.start == -1)
         {//si la particion no esta montada
-            printf("Error: al formatear, la particion '%s' no esta montada\n", data.id);
+            printf("Error:  la particion '%s' no esta montada\n", data.id);
             return;
         }
         /************************************
@@ -1019,13 +1115,13 @@ void disk::login(Metadata data)
         FILE* file = get_file_by_id(data.id);
         //leyendo el superbloque de la particion
         SuperBloque sb = get_part_sb(file,current_partition.start);
-        //leer el bloque de usuarios para ver su contenido
-        Bloque_Archivo users;
-        int users_dir = sb.s_block_start + static_cast<int>(sizeof (Bloque_Archivo)) * 2;
+        //leer el inodo de usuarios para ver su contenido
+        iNodo users;
+        int users_dir = sb.s_inode_start + static_cast<int>(sizeof (iNodo));
         fseek(file,users_dir,SEEK_SET);
-        fread(&users, sizeof(Bloque_Archivo), 1, file);
+        fread(&users, sizeof(iNodo), 1, file);
         //separar los usuarios
-        QStringList lines = QString(users.b_content).split('\n');
+        QStringList lines = get_full_file(users,file).remove("\001").split('\n');
         //buscar el usuario y su pwd
         foreach(auto line, lines)
         {
@@ -1081,7 +1177,7 @@ void disk::makeGroup(Metadata data)
     Partition current_partition = get_mounted_partition(cookie.id);
     if(current_partition.start == -1)
     {//si la particion no esta montada
-        printf("Error: al formatear, la particion '%s' no esta montada\n", data.id);
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
         return;
     }
     //quitarle las comillas al nombre
@@ -1126,192 +1222,17 @@ void disk::makeGroup(Metadata data)
     new_id += ", G, ";
     new_id += QString(data.name).toStdString();
     new_id += "\n";
-    QString new_group = QString(new_id.c_str());
-    //obtener el ultimo bloque utilizado por este inodo
-    int content_index = get_last_block_index(users.i_block,file);
-    Bloque_Archivo content;
-    //si el ultimo index sigue en los directos
-    if(content_index < 12)
+    //concatenar el texto en nuestro inodo
+    if(!append_text_in_inode(users_dir,QString(new_id.c_str()),file,sb))
     {
-        fseek(file,users.i_block[content_index],SEEK_SET);
-        fread(&content, sizeof(Bloque_Archivo), 1, file);
+        printf("Error: El archivo ha alcanzado su size maximo\n");
+        return;
     }
-    //si no buscar el bloque entre los indirectos
-    else
+    //guardando la bitacora
+    if(sb.s_filesystem_type == 3)
     {
-        Bloque_apuntador pointer;
-        fseek(file,users.i_block[content_index],SEEK_SET);
-        fread(&pointer, sizeof(Bloque_apuntador), 1, file);
-    }
-    //obtener el espacio libre en el bloque para ver si aun cabe
-    int free_space = block_empty_space(content.b_content);
-    if(free_space < new_group.size())
-    {
-        int new_blocks = ((new_group.size() - free_space) / 64) + 1;
-        //escribir el espacio faltante
-        for (int j = 0; j < free_space; j++)
-        {
-            content.b_content[64 - free_space + j] = new_group[j].toLatin1();
-        }
-        //guardar cambios
-        fseek(file,users.i_block[content_index],SEEK_SET);
-        fwrite(&content, sizeof(Bloque_Archivo), 1, file);
-        //crear un nuevo bloque y escribirlo
-        Bloque_Archivo new_blck;
-        //para iterar lo que resta de la string
-        int string_pointer = free_space;
-        while (new_blocks != 0)
-        {
-            //escribir un bloque entero
-            for (int i = 0; i < 64; i++)
-            {
-                if((string_pointer + i) > new_group.size()) continue;
-                new_blck.b_content[i] = new_group[string_pointer + i].toLatin1();
-            }
-            //aumentar los bloques usados
-            sb.s_blocks_count++;
-            //guardar el nuevo bloque
-            int pos = get_free_block_index_by_bitmap(sb,file,true);
-            fseek(file,pos,SEEK_SET);
-            fwrite(&new_blck, sizeof(Bloque_Archivo), 1, file);
-            //apuntar el nuevo bloque
-            if((content_index + 1) < 12)
-            {
-                users.i_block[++content_index] = pos;
-            }
-            //ya tiene que ir entre los indirectos
-            else
-            {
-                switch (content_index + 1)
-                {
-                case 12:
-                    //si esta vacio crear el indirecto y guardarlo
-                    if(users.i_block[12] == 0)
-                    {
-                        //el nuevo bloque apuntador
-                        Bloque_apuntador *pointer = new Bloque_apuntador();
-                        //apuntar el nuevo archivo
-                        pointer->b_pointers[0] = pos;
-                        //posicion para el bloque indirecto
-                        int indirect_pos = get_free_block_index_by_bitmap(sb,file,true);
-                        //guardar el bloque indirecto
-                        fseek(file,indirect_pos,SEEK_SET);
-                        fwrite(&*pointer, sizeof(Bloque_apuntador), 1, file);
-                        free(pointer);
-                        //apuntar el inodo
-                        users.i_block[12] = indirect_pos;
-                    }
-                    //guardarlo en el indirecto
-                    else
-                    {
-                        //cargar el bloque indirecto
-                        Bloque_apuntador *pointer = new Bloque_apuntador();
-                        fseek(file,users.i_block[12] ,SEEK_SET);
-                        fread(&*pointer, sizeof(Bloque_apuntador), 1, file);
-                        //recorrer sus posiciones
-                        for(int i = 0; i < 16; i++)
-                        {
-                            //encontrar la primera vacia
-                            if(pointer->b_pointers[i] == 0)
-                            {
-                                pointer->b_pointers[i] = pos;
-                                //si ya es el ultimo entonces pasar al segundo caso
-                                if(i == 15) content_index++;
-                                break;
-                            }
-                        }
-                        //guardar el bloque indirecto
-                        fseek(file,users.i_block[12],SEEK_SET);
-                        fwrite(&*pointer, sizeof(Bloque_apuntador), 1, file);
-                        free(pointer);
-                    }
-                    break;
-                case 13:
-                    if(users.i_block[13] == 0)
-                    {
-                        //si esta vacio crear dos nuevos apuntadores
-                        //el nuevo bloque apuntador
-                        Bloque_apuntador *pointer = new Bloque_apuntador();
-                        Bloque_apuntador *pointer2 = new Bloque_apuntador();
-                        //posicion para el bloque indirecto
-                        int indirect_pos = get_free_block_index_by_bitmap(sb,file,true);
-                        int indirect_pos2 = get_free_block_index_by_bitmap(sb,file,true);
-                        //apuntar el nuevo archivo
-                        pointer->b_pointers[0] = indirect_pos2;
-                        pointer2->b_pointers[0] = pos;
-                        //guardar los bloques indirectos
-                        fseek(file,indirect_pos,SEEK_SET);
-                        fwrite(&*pointer, sizeof(Bloque_apuntador), 1, file);
-                        free(pointer);
-                        fseek(file,indirect_pos2,SEEK_SET);
-                        fwrite(&*pointer2, sizeof(Bloque_apuntador), 1, file);
-                        free(pointer2);
-                        //apuntar el inodo
-                        users.i_block[12] = indirect_pos;
-                    }
-                    else
-                    {
-                        //buscar un apuntador con bloques vacios
-                    }
-                    break;
-                case 14:
-                    if(users.i_block[13] == 0)
-                    {
-                        //si esta vacio crear dos nuevos apuntadores
-                        //el nuevo bloque apuntador
-                        Bloque_apuntador *pointer = new Bloque_apuntador();
-                        Bloque_apuntador *pointer2 = new Bloque_apuntador();
-                        Bloque_apuntador *pointer3 = new Bloque_apuntador();
-                        //posicion para el bloque indirecto
-                        int indirect_pos = get_free_block_index_by_bitmap(sb,file,true);
-                        int indirect_pos2 = get_free_block_index_by_bitmap(sb,file,true);
-                        int indirect_pos3 = get_free_block_index_by_bitmap(sb,file,true);
-                        //apuntar el nuevo archivo
-                        pointer->b_pointers[0] = indirect_pos2;
-                        pointer2->b_pointers[0] = indirect_pos3;
-                        pointer3->b_pointers[0] = pos;
-                        //guardar los bloques indirectos
-                        fseek(file,indirect_pos,SEEK_SET);
-                        fwrite(&*pointer, sizeof(Bloque_apuntador), 1, file);
-                        free(pointer);
-                        fseek(file,indirect_pos2,SEEK_SET);
-                        fwrite(&*pointer2, sizeof(Bloque_apuntador), 1, file);
-                        free(pointer2);
-                        fseek(file,indirect_pos3,SEEK_SET);
-                        fwrite(&*pointer3, sizeof(Bloque_apuntador), 1, file);
-                        free(pointer3);
-                        //apuntar el inodo
-                        users.i_block[13] = indirect_pos;
-                    }
-                    else
-                    {
-                        //buscar un apuntador con bloques vacios
-                    }
-                    break;
-                }
-            }
-            //si es
-            users.i_mtime = time(nullptr);
-            //guardar el inodo
-            fseek(file,users_dir,SEEK_SET);
-            fwrite(&users, sizeof(iNodo), 1, file);
-            //restarle posiciones al string
-            string_pointer += 64;
-            new_blocks--;
-        }
-        //actualizar los datos del superbloque
-        fseek(file,current_partition.start,SEEK_SET);
-        fwrite(&sb, sizeof(SuperBloque), 1, file);
-    }
-    else
-    {
-        for (int j = 0; j < new_group.size();j++)
-        {
-            content.b_content[64 - free_space + j] = new_group[j].toLatin1();
-        }
-        //guardar cambios
-        fseek(file,users.i_block[content_index],SEEK_SET);
-        fwrite(&content, sizeof(Bloque_Archivo), 1, file);
+        Bitacora* log = new Bitacora("mkGroup","users.txt",new_id);
+        add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
     }
     fclose(file);
     printf("Sistema: Grupo %s creado correctamente\n",data.name);
@@ -1327,7 +1248,7 @@ void disk::removeGroup(Metadata data)
     Partition current_partition = get_mounted_partition(cookie.id);
     if(current_partition.start == -1)
     {//si la particion no esta montada
-        printf("Error: al formatear, la particion '%s' no esta montada\n", data.id);
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
         return;
     }
     //quitarle la comillas a la string
@@ -1434,6 +1355,12 @@ void disk::removeGroup(Metadata data)
     //se cierra el archivo
     fclose(file);
     //mensaje para el usuario
+    //guardando la bitacora
+    if(sb.s_filesystem_type == 3)
+    {
+        Bitacora* log = new Bitacora("removeGroup","users.txt",data.name);
+        add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
+    }
     printf("Sistema: Grupo %s borrado con exito\n",data.name);
 }
 
@@ -1447,7 +1374,7 @@ void disk::makeUser(Metadata data)
     Partition current_partition = get_mounted_partition(cookie.id);
     if(current_partition.start == -1)
     {//si la particion no esta montada
-        printf("Error: al formatear, la particion '%s' no esta montada\n", data.id);
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
         return;
     }
     //quitarle las comillas al nombre
@@ -1512,66 +1439,17 @@ void disk::makeUser(Metadata data)
     new_id += ", ";
     new_id += QString(data.path).toStdString();
     new_id += "\n";
-    QString new_usr = QString(new_id.c_str());
-    //obtener el ultimo bloque utilizado por este inodo
-    int content_index = get_last_block_index(users.i_block,file);
-    Bloque_Archivo content;
-    fseek(file,users.i_block[content_index],SEEK_SET);
-    fread(&content, sizeof(Bloque_Archivo), 1, file);
-    //obtener el espacio libre en el bloque para ver si aun cabe
-    int free_space = block_empty_space(content.b_content);
-    if(free_space < new_usr.size())
+    //concatenar el texto en nuestro inodo
+    if(!append_text_in_inode(users_dir,QString(new_id.c_str()),file,sb))
     {
-        int new_blocks = ((new_usr.size() - free_space) / 64) + 1;
-        //escribir el espacio faltante
-        for (int j = 0; j < free_space; j++)
-        {
-            content.b_content[64 - free_space + j] = new_usr[j].toLatin1();
-        }
-        //guardar cambios
-        fseek(file,users.i_block[content_index],SEEK_SET);
-        fwrite(&content, sizeof(Bloque_Archivo), 1, file);
-        //crear un nuevo bloque y escribirlo
-        Bloque_Archivo new_blck;
-        //para iterar lo que resta de la string
-        int string_pointer = free_space;
-        while (new_blocks != 0)
-        {
-            //escribir un bloque entero
-            for (int i = 0; i < 64; i++)
-            {
-                if((string_pointer + i) > new_usr.size()) continue;
-                new_blck.b_content[i] = new_usr[string_pointer + i].toLatin1();
-            }
-            //aumentar los bloques usados
-            sb.s_blocks_count++;
-            //guardar el nuevo bloque
-            int pos = get_free_block_index_by_bitmap(sb,file,true);
-            fseek(file,pos,SEEK_SET);
-            fwrite(&new_blck, sizeof(Bloque_Archivo), 1, file);
-            //apuntar el nuevo bloque
-            users.i_block[++content_index] = pos;
-            users.i_mtime = time(nullptr);
-            //guardar el inodo
-            fseek(file,users_dir,SEEK_SET);
-            fwrite(&users, sizeof(iNodo), 1, file);
-            //restarle posiciones al string
-            string_pointer += 64;
-            new_blocks--;
-        }
-        //actualizar los datos del superbloque
-        fseek(file,current_partition.start,SEEK_SET);
-        fwrite(&sb, sizeof(SuperBloque), 1, file);
+        printf("Error: El archivo ha alcanzado su size maximo\n");
+        return;
     }
-    else
+    //guardando la bitacora
+    if(sb.s_filesystem_type == 3)
     {
-        for (int j = 0; j < new_usr.size();j++)
-        {
-            content.b_content[64 - free_space + j] = new_usr[j].toLatin1();
-        }
-        //guardar cambios
-        fseek(file,users.i_block[content_index],SEEK_SET);
-        fwrite(&content, sizeof(Bloque_Archivo), 1, file);
+        Bitacora* log = new Bitacora("mkUser","users.txt",new_id);
+        add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
     }
     fclose(file);
     printf("Sistema: Usuario %s creado correctamente\n",data.user);
@@ -1587,7 +1465,7 @@ void disk::removeUser(Metadata data)
     Partition current_partition = get_mounted_partition(cookie.id);
     if(current_partition.start == -1)
     {//si la particion no esta montada
-        printf("Error: al formatear, la particion '%s' no esta montada\n", data.id);
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
         return;
     }
     //quitarle la comillas a la string
@@ -1693,6 +1571,11 @@ void disk::removeUser(Metadata data)
     //se guarda el superbloque
     fseek(file,current_partition.start,SEEK_SET);
     fwrite(&sb, sizeof(SuperBloque), 1, file);
+    if(sb.s_filesystem_type == 3)
+    {
+        Bitacora* log = new Bitacora("removeUser","users.txt",data.name);
+        add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
+    }
     //se cierra el archivo
     fclose(file);
 
@@ -1710,7 +1593,7 @@ void disk::chmod(Metadata data)
     Partition current_partition = get_mounted_partition(cookie.id);
     if(current_partition.start == -1)
     {//si la particion no esta montada
-        printf("Error: al formatear, la particion '%s' no esta montada\n", data.id);
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
         return;
     }
 
@@ -1724,7 +1607,7 @@ void disk::chmod(Metadata data)
     fseek(file,sb.s_inode_start,SEEK_SET);
     fread(&to_modify, sizeof(iNodo), 1, file);
     //separar la ruta para obtener las carpetas
-    QStringList lines = QString(data.path).split('\n');
+    QStringList lines = QString(data.path).split('/');
     //para iterar los niveles en el arbol
     int iterator = 0;
     //para guardar la direccion del inodo que buscamos modificar
@@ -1818,3 +1701,355 @@ void disk::chmod(Metadata data)
     //mensaje de exito
     printf("Sistema: Permisos actualizados con exito\n");
 }
+
+void disk::makeFile(Metadata data)
+{
+    //*******Validacion de parametros***********//
+    if(!validate_path(data.path,false)) return;
+    if(data.size < 0)
+    {
+        printf("Sistema: error con el size del archivo, no valido: %i",data.size);
+        return;
+    }
+    Partition current_partition = get_mounted_partition(cookie.id);
+    if(current_partition.start == -1)
+    {//si la particion no esta montada
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
+        return;
+    }
+
+    //***************Ejecucion**********//
+    //abrir el disco para escribir en el
+    FILE* file = get_file_by_id(cookie.id);
+    //leyendo el superbloque de la particion
+    SuperBloque sb = get_part_sb(file,current_partition.start);
+    //obteniendo el primer inodo
+    iNodo to_modify;
+    fseek(file,sb.s_inode_start,SEEK_SET);
+    fread(&to_modify, sizeof(iNodo), 1, file);
+    //separar la ruta para obtener las carpetas
+    QStringList lines = QString(data.path).split('/');
+    //para iterar los niveles en el arbol
+    int iterator = 0;
+    //para guardar la direccion del inodo que buscamos modificar
+    int direction = 0, last_direction = sb.s_inode_start;
+    //subiendo en los niveles
+    while (iterator < lines.count() - 1)
+    {
+        //setear a 0 para encontrar el nuevo nivel
+        direction = search_path_in_inode(to_modify,file,lines[iterator]);
+        //si no lo encuentra
+        if(direction == 0)
+        {
+            if(data.recursively)
+            {
+                //Se crea el folder en el inodo
+                direction = make_folder_in_inode(last_direction,file,lines[iterator],data.size,sb);
+                if(direction != 0)
+                {
+                    //actualizando el inodo al que encontro
+                    fseek(file,direction,SEEK_SET);
+                    fread(&to_modify, sizeof(iNodo), 1, file);
+                    printf("se crea carpeta: %s\n",lines[iterator].toStdString().c_str());
+                }
+                //sino se logra crear es porque esta lleno el ultimo bloque carpeta
+                else
+                {
+                    printf("Sistema: Size maximo alcanzado\n");
+                    return;
+                }
+            }
+            else
+            {
+                printf("Sistema: ruta inexistente: %s\n",data.path);
+                return;
+            }
+        }
+        else
+        {
+            //actualizar el inodo para subir de nivel
+            fseek(file,direction,SEEK_SET);
+            fread(&to_modify, sizeof(iNodo), 1, file);
+        }
+        //aumentando el nivel del arbol
+        last_direction = direction;
+        iterator++;
+    }
+    //abriendo el contenido a subir al sistema
+
+    if(data.ruta[0] != '\0')
+    {
+        fix_path(data.ruta,500);
+        string line,full_file = "";
+        ifstream myfile (data.ruta);
+        if (myfile.is_open())
+        {
+            while ( getline (myfile,line) )
+            {
+                full_file += line;
+            }
+            myfile.close();
+            if(
+                    //la direccion es la de un bloque carpeta con espacios vacios
+                    make_file_in_block
+                    (
+                        file
+                        ,get_last_folder_block_with_free_space(last_direction,file,sb)
+                        ,to_modify
+                        ,-1
+                        ,sb,lines[iterator].toStdString().c_str()
+                        , QString().fromStdString(full_file)
+                        ) == 0
+                    )
+            {
+                //si devuelve 0 no se pudo crear el archivo por falta de espacio
+                printf("Error: Al crear archivo\n");
+                return;
+            }
+            //mensaje al usuario
+            printf("Sistema: Archivo creado con exito\n");
+            return;
+        }
+        else
+        {
+             printf("Error: Al crear archivo, origen no encontrado %s\n",data.ruta);
+             return;
+        }
+    }
+
+    //probar llenando de numeros
+    if(
+            //la direccion es la de un bloque carpeta con espacios vacios
+            make_file_in_block
+            (
+                file
+                ,get_last_folder_block_with_free_space(last_direction,file,sb)
+                ,to_modify
+                ,data.size
+                ,sb,lines[iterator].toStdString().c_str()
+                , ""
+                ) == 0
+            )
+    {
+        //si devuelve 0 no se pudo crear el archivo por falta de espacio
+        printf("Error: Al crear archivo\n");
+        return;
+    }
+    //mensaje al usuario
+    printf("Sistema: Archivo creado con exito\n");
+
+    //se comprobaron todas las carpetas padres ahora crear el archivo
+
+    if(sb.s_filesystem_type == 3)
+    {
+        Bitacora* log = new Bitacora("mkFile",data.path,QString::number(data.recursively).toStdString());
+        add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
+    }
+    fclose(file);
+}
+
+void disk::makeDir(Metadata data)
+{
+    //*******Validacion de parametros***********//
+    if(!validate_path(data.path,false)) return;
+    if(data.size < 0)
+    {
+        printf("Sistema: error con el size del archivo, no valido: %i",data.size);
+        return;
+    }
+    Partition current_partition = get_mounted_partition(cookie.id);
+    if(current_partition.start == -1)
+    {//si la particion no esta montada
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
+        return;
+    }
+
+    //***************Ejecucion**********//
+    //abrir el disco para escribir en el
+    FILE* file = get_file_by_id(cookie.id);
+    //leyendo el superbloque de la particion
+    SuperBloque sb = get_part_sb(file,current_partition.start);
+    //obteniendo el primer inodo
+    iNodo to_modify;
+    fseek(file,sb.s_inode_start,SEEK_SET);
+    fread(&to_modify, sizeof(iNodo), 1, file);
+    //separar la ruta para obtener las carpetas
+    QStringList lines = QString(data.path).split('/');
+    //para iterar los niveles en el arbol
+    int iterator = 0;
+    //para guardar la direccion del inodo que buscamos modificar
+    int direction = 0, last_direction = sb.s_inode_start;
+    //subiendo en los niveles
+    while (iterator < lines.count() - 1)
+    {
+        //setear a 0 para encontrar el nuevo nivel
+        direction = search_path_in_inode(to_modify,file,lines[iterator]);
+        //si no lo encuentra
+        if(direction == 0)
+        {
+            if(data.recursively)
+            {
+                //Se crea el folder en el inodo
+                direction = make_folder_in_inode(last_direction,file,lines[iterator],0,sb);
+                if(direction != 0)
+                {
+                    //actualizando el inodo al que encontro
+                    fseek(file,direction,SEEK_SET);
+                    fread(&to_modify, sizeof(iNodo), 1, file);
+                    printf("se crea carpeta: %s\n",lines[iterator].toStdString().c_str());
+                }
+                //sino se logra crear es porque esta lleno el ultimo bloque carpeta
+                else
+                {
+                    printf("Sistema: Size maximo alcanzado");
+                    return;
+                }
+            }
+            else
+            {
+                printf("Sistema: ruta inexistente: %s\n",data.path);
+                return;
+            }
+        }
+        else
+        {
+            //actualizar el inodo para subir de nivel
+            fseek(file,direction,SEEK_SET);
+            fread(&to_modify, sizeof(iNodo), 1, file);
+        }
+        //aumentando el nivel del arbol
+        last_direction = direction;
+        iterator++;
+    }
+    //se comprobaron todas las carpetas padres ahora crear el archivo
+    if(
+            //la direccion es la de un bloque carpeta con espacios vacios
+            make_folder_in_block
+            (
+                file
+                ,get_last_folder_block_with_free_space(last_direction,file,sb)
+                ,to_modify
+                ,0
+                ,sb
+                ,lines[iterator].toStdString().c_str()
+                ) == 0
+            )
+        //si devuelve 0 no se pudo crear el archivo por falta de espacio
+        printf("Error: Al crear carpeta\n");
+    //mensaje al usuario
+    printf("Sistema: Archivo creado con exito\n");
+    if(sb.s_filesystem_type == 3)
+    {
+        Bitacora* log = new Bitacora("mkDir",data.path,QString::number(data.recursively).toStdString());
+        add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
+    }
+    fclose(file);
+}
+
+void disk::showFile(Metadata data, bool gnt_report)
+{
+    //*******Validacion de parametros***********//
+    if(!validate_path(data.path,false)) return;
+    Partition current_partition = get_mounted_partition(cookie.id);
+    if(current_partition.start == -1)
+    {//si la particion no esta montada
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
+        return;
+    }
+
+    //***************Ejecucion**********//
+    //abrir el disco para escribir en el
+    FILE* file = get_file_by_id(cookie.id);
+    //leyendo el superbloque de la particion
+    SuperBloque sb = get_part_sb(file,current_partition.start);
+    //obteniendo el primer inodo
+    iNodo to_modify;
+    fseek(file,sb.s_inode_start,SEEK_SET);
+    fread(&to_modify, sizeof(iNodo), 1, file);
+    //separar la ruta para obtener las carpetas
+    QStringList lines = QString(data.path).split('/');
+    //para iterar los niveles en el arbol
+    int iterator = 0;
+    //para guardar la direccion del inodo que buscamos modificar
+    int direction = 0, last_direction = sb.s_inode_start;
+    //subiendo en los niveles
+    while (iterator < lines.count())
+    {
+        //setear a 0 para encontrar el nuevo nivel
+        direction = search_path_in_inode(to_modify,file,lines[iterator]);
+        //si no lo encuentra
+        if(direction == 0)
+        {
+            printf("Sistema: ruta inexistente: %s\n",data.path);
+            return;
+        }
+        else
+        {
+            //actualizar el inodo para subir de nivel
+            fseek(file,direction,SEEK_SET);
+            fread(&to_modify, sizeof(iNodo), 1, file);
+        }
+        //aumentando el nivel del arbol
+        last_direction = direction;
+        iterator++;
+    }
+    //Se muestra el contenido del archivo
+    string full_file = get_full_file(to_modify,file).remove("\001").toStdString();
+    if(gnt_report)
+    {
+        fix_path(data.ruta,500);
+        graficador::generate_file_report(full_file,data.ruta);
+    }
+    else
+    {
+        cout << full_file << endl;
+    }
+    fclose(file);
+}
+
+void disk::loss(Metadata data)
+{
+    Partition current_partition = get_mounted_partition(data.id);
+    if(current_partition.start == -1)
+    {//si la particion no esta montada
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
+        return;
+    }
+    //***************Ejecucion**********//
+    //abrir el disco para escribir en el
+    FILE* file = get_file_by_id(cookie.id);
+    //leyendo el superbloque de la particion
+    SuperBloque sb = get_part_sb(file,current_partition.start);
+    //obteniendo el primer inodo
+    iNodo to_modify;
+    fseek(file,sb.s_inode_start,SEEK_SET);
+    fread(&to_modify, sizeof(iNodo), 1, file);
+    //mandando a borrar sus datos
+    switch_deleted(true);
+    //mensaje de usuario
+    printf("Sistema: se han perdido todos los datos\n");
+}
+
+void disk::recovery(Metadata data)
+{
+    Partition current_partition = get_mounted_partition(data.id);
+    if(current_partition.start == -1)
+    {//si la particion no esta montada
+        printf("Error:  la particion '%s' no esta montada\n", data.id);
+        return;
+    }
+    //***************Ejecucion**********//
+    //abrir el disco para escribir en el
+    FILE* file = get_file_by_id(cookie.id);
+    //leyendo el superbloque de la particion
+    SuperBloque sb = get_part_sb(file,current_partition.start);
+    //obteniendo el primer inodo
+    iNodo to_modify;
+    fseek(file,sb.s_inode_start,SEEK_SET);
+    fread(&to_modify, sizeof(iNodo), 1, file);
+    //mandando a borrar sus datos
+    switch_deleted(false);
+    //mensaje de usuario
+    printf("Sistema: se han recuperado todos los datos\n");
+}
+

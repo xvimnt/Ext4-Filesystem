@@ -70,44 +70,31 @@ void graficador:: generarImagen()
     QString cadenaComando = "dot -Tjpg grafo.txt -o grafo.jpg ";
     system(cadenaComando.toUtf8().constData());
 }
-/*
+
 void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
 
     //HTML Rows
-    QString n1=sb.sb_nombre_hd;
-    QString n2=QString::number(sb.sb_arbol_virtual_count);
-    QString n3=QString::number(sb.sb_detalle_directorio_count);
-    QString n4=QString::number(sb.sb_inodos_count);
-    QString n5=QString::number(sb.sb_bloques_count);
-    QString n6=QString::number(sb.sb_arbol_virtual_free);
-    QString n7=QString::number(sb.sb_detalle_directorio_free);
-    QString n8=QString::number(sb.sb_inodos_free);
-    QString n9 = QString::number(sb.sb_bloques_free);
-    QString n10 = sb.sb_date_creacion;
-    QString n11 = sb.sb_date_ultimo_montaje;
-    QString n12 = QString::number(sb.sb_montajes_count);
-    QString n13 = QString::number(sb.sb_ap_bitmap_arbol_directorio);
-    QString n14 = QString::number(sb.sb_ap_arbol_directorio);
-    QString n15 = QString::number(sb.sb_ap_bitmap_detalle_directorio);
-    QString n16 = QString::number(sb.sb_ap_detalle_directorio);
-    QString n17 = QString::number(sb.sb_ap_bitmap_tabla_inodo);
-    QString n18 = QString::number(sb.sb_ap_tabla_inodo);
-    QString n19 = QString::number(sb.sb_ap_bitmap_bloques);
-    QString n20 = QString::number(sb.sb_ap_bloques);
-    QString n21 = QString::number(sb.sb_ap_log);
-    QString n22 = QString::number(sb.sb_size_struct_arbol_directorio);
-    QString n23 = QString::number(sb.sb_size_struct_detalle_directorio);
-    QString n24 = QString::number(sb.sb_size_struct_inodo);
-    QString n25 = QString::number(sb.sb_size_struct_bloque);
-    QString n26 = QString::number(sb.sb_first_free_bit_arbol_directorio);
-    QString n27 = QString::number(sb.sb_first_free_bit_detalle_directorio);
-    QString n28 = QString::number(sb.sb_first_free_bit_tabla_inodo);
-    QString n29 = QString::number(sb.sb_first_free_bit_bloques);
-    QString n30 = QString::number(sb.sb_magic_num);
+    QString n1=QString::number(sb.s_magic);
+    QString n2=QString::number(sb.s_mtime);
+    QString n3=QString::number(sb.s_umtime);
+    QString n4=QString::number(sb.s_first_blo);
+    QString n5=QString::number(sb.s_firts_ino);
+    QString n6=QString::number(sb.s_mnt_count);
+    QString n7=QString::number(sb.s_block_size);
+    QString n8=QString::number(sb.s_inode_size);
+    QString n9 = QString::number(sb.s_block_start);
+    QString n10=QString::number(sb.s_inode_start);
+    QString n11=QString::number(sb.s_blocks_count);
+    QString n12 = QString::number(sb.s_inodes_count);
+    QString n13=QString::number(sb.s_bm_block_start);
+    QString n14= QString::number(sb.s_bm_inode_start);
+    QString n15 = QString::number(sb.s_filesystem_type);
+    QString n16 = QString::number(sb.s_free_blocks_count);
+    QString n17 = QString::number(sb.s_free_inodes_count);
 
     //Adding SB attributes
     QString dot= "            <TR> \n"
-                 "                <TD>Sb_nombre_hd</TD> \n"
+                 "                <TD>sb.s_magic</TD> \n"
                  "                <TD>"
                  "                    <TABLE BORDER=\"0\"> \n"
                  "                        <TR><TD>"+n1+"</TD></TR> \n"
@@ -115,7 +102,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                        "                </TD> \n"
                                                        "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_arbol_virtual_cont </TD> \n"
+         "                <TD>sb.s_mtime</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n2+"</TD></TR> \n"
@@ -123,7 +110,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "                </TD> \n"
                                                "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_detalle_directorio_count </TD> \n"
+         "                <TD>sb.s_umtime</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n3+"</TD></TR> \n"
@@ -131,7 +118,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "                </TD> \n"
                                                "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_inodos_count </TD> \n"
+         "                <TD>sb.s_first_blo</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n4+"</TD></TR> \n"
@@ -140,7 +127,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "            </TR> \n";
 
     dot+="            <TR> \n"
-         "                <TD> sb_bloques_count </TD> \n"
+         "                <TD>sb.s_firts_ino</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n5+"</TD></TR> \n"
@@ -149,7 +136,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "            </TR> \n";
 
     dot+="            <TR> \n"
-         "                <TD> sb_arbol_virtual_free </TD> \n"
+         "                <TD>sb.s_mnt_count</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n6+"</TD></TR> \n"
@@ -157,7 +144,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "                </TD> \n"
                                                "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_detalle_directorio_free </TD> \n"
+         "                <TD>sb.s_block_size</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n7+"</TD></TR> \n"
@@ -165,7 +152,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "                </TD> \n"
                                                "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_inodos_free </TD> \n"
+         "                <TD>sb.s_inode_size</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n8+"</TD></TR> \n"
@@ -173,7 +160,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "                </TD> \n"
                                                "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_bloques_free </TD> \n"
+         "                <TD>sb.s_block_start</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n9+"</TD></TR> \n"
@@ -181,7 +168,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                "                </TD> \n"
                                                "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_date_creation </TD> \n"
+         "                <TD> sb.s_inode_start</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n10+"</TD></TR> \n"
@@ -189,7 +176,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                 "                </TD> \n"
                                                 "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_date_ultimo_montaje </TD> \n"
+         "                <TD> sb.s_blocks_count </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n11+"</TD></TR> \n"
@@ -197,7 +184,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                 "                </TD> \n"
                                                 "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_montajes_count </TD> \n"
+         "                <TD>sb.s_inodes_count</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n12+"</TD></TR> \n"
@@ -205,7 +192,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                 "                </TD> \n"
                                                 "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_ap_bitmap_arbol_directorio </TD> \n"
+         "                <TD> sb.s_bm_block_start</TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n13+"</TD></TR> \n"
@@ -213,7 +200,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                 "                </TD> \n"
                                                 "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_ap_arbol_directorio </TD> \n"
+         "                <TD> s_bm_inode_start </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n14+"</TD></TR> \n"
@@ -221,7 +208,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                 "                </TD> \n"
                                                 "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_ap_bitmap_detalle_directorio </TD> \n"
+         "                <TD> s_filesystem_type </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n15+"</TD></TR> \n"
@@ -229,7 +216,7 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                 "                </TD> \n"
                                                 "            </TR> \n";
     dot+="            <TR> \n"
-         "                <TD> sb_ap_detalle_directorio </TD> \n"
+         "                <TD> s_free_blocks_count </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n16+"</TD></TR> \n"
@@ -238,120 +225,10 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
                                                 "            </TR> \n";
 
     dot+="            <TR> \n"
-         "                <TD> sb_ap_bitmap_tabla_inodo </TD> \n"
+         "                <TD> s_free_inodes_count </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+n17+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-
-    dot+="            <TR> \n"
-         "                <TD> sb_ap_tabla_inodo </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n18+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-    dot+="            <TR> \n"
-         "                <TD> sb_ap_bitmap_bloques </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n19+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-    dot+="            <TR> \n"
-         "                <TD> sb_ap_bloques </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n20+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-
-    dot+="            <TR> \n"
-         "                <TD> sb_ap_log </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n21+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-
-    dot+="            <TR> \n"
-         "                <TD> sb_size_struct_arbol_directorio </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n22+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-
-    dot+="            <TR> \n"
-         "                <TD> sb_size_struct_detalle_directorio </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n23+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-
-    dot+="            <TR> \n"
-         "                <TD> sb_size_struct_inodo </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n24+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-    dot+="            <TR> \n"
-         "                <TD> sb_size_struct_bloque </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n25+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-    dot+="            <TR> \n"
-         "                <TD> sb_first_free_bit_arbol_directorio </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n26+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-
-    dot+="            <TR> \n"
-         "                <TD> sb_first_free_bit_detalle_directorio </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n27+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-    dot+="            <TR> \n"
-         "                <TD> sb_first_free_bit_tabla_inodo </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n28+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-    dot+="            <TR> \n"
-         "                <TD> sb_first_free_bit_bloques </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n29+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
-    dot+="            <TR> \n"
-         "                <TD> sb_magic_num </TD> \n"
-         "                <TD> \n"
-         "                    <TABLE BORDER=\"0\"> \n"
-         "                        <TR><TD>"+n30+"</TD></TR> \n"
                                                 "                    </TABLE> \n"
                                                 "                </TD> \n"
                                                 "            </TR> \n";
@@ -361,11 +238,11 @@ void graficador::generate_SB_table_content(string output_path,SuperBloque sb){
     int slash=disco.lastIndexOf("/");
     int last = disco.length();
     disco=disco.mid(slash+1,last);
-    disco=disco+"/Particion/"+QString(sb.sb_nombre_hd);
+    disco=disco+"/ParticionSb/";
     generate_graphviz_table("PDF",dot,output_path,disco,"SB");
 
 }
-*/
+
 static void GrapvizDisco(string extension, QString dot, string path){
     QString sb =
             "        digraph D {"
@@ -629,41 +506,41 @@ void graficador::generate_ebr_table_content(string output_path,Ebr ebr, string c
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+QString(ebr.fit)+"</TD></TR> \n"
-                                                  "                    </TABLE> \n"
-                                                  "                </TD> \n"
-                                                  "            </TR> \n";
+                                                             "                    </TABLE> \n"
+                                                             "                </TD> \n"
+                                                             "            </TR> \n";
     dot+="            <TR> \n"
          "                <TD> EBR_START </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+sstart+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
+                                                   "                    </TABLE> \n"
+                                                   "                </TD> \n"
+                                                   "            </TR> \n";
     dot+="            <TR> \n"
          "                <TD> EBR_SIZE </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+ssize+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
+                                                  "                    </TABLE> \n"
+                                                  "                </TD> \n"
+                                                  "            </TR> \n";
     dot+="            <TR> \n"
          "                <TD> EBR_NEXT </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+snext+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
+                                                  "                    </TABLE> \n"
+                                                  "                </TD> \n"
+                                                  "            </TR> \n";
     dot+="            <TR> \n"
          "                <TD> EBR_NAME </TD> \n"
          "                <TD> \n"
          "                    <TABLE BORDER=\"0\"> \n"
          "                        <TR><TD>"+QString(ebr.name)+"</TD></TR> \n"
-                                                "                    </TABLE> \n"
-                                                "                </TD> \n"
-                                                "            </TR> \n";
+                                                              "                    </TABLE> \n"
+                                                              "                </TD> \n"
+                                                              "            </TR> \n";
     QString disco=ebr.name;
     int slash=QString(output_path.c_str()).lastIndexOf("/");
     QString new_path = QString(output_path.c_str()).mid(0,slash + 1);
@@ -694,234 +571,68 @@ void graficador::generate_graphviz_table(string extension,QString dot,string pat
     file.close();
     //  cout<<extension<<endl;
     string comando;
-    if(extension=="jpg"|extension=="JPG"){
-        comando.append("dot -Tjpg ");
-        comando.append("grafo.dot ");
-        comando.append("-o ");
-        comando.append("\"");
-        comando.append(path);
-        comando.append("\"");
-        int res =system(comando.c_str());
-        if(res==0){
-            cout<<"\033[1;32m----------- Reporte "<<tipo<<" Creado Exitosamente -----\033[0m"<<endl;
-        }
-
-    }else if(extension=="PDF"|extension=="pdf") {
-        comando.append("dot -Tpdf ");
-        comando.append("grafo.dot ");
-        comando.append("-o ");
-        comando.append("\"");
-        comando.append(path);
-        comando.append("\"");
-        if(system(comando.c_str())==0){
-            printf("\n*********Reporte creado exitosamente**********\n");
-        }
-        // cout<<"dentro pdf "<<endl;
-    }else if(extension=="png"|extension=="PNG"){
-        comando.append("dot -Tpng ");
-        comando.append("grafo.dot ");
-        comando.append("-o ");
-        comando.append("\"");
-        comando.append(path);
-        comando.append("\"");
-        int res =system(comando.c_str());
-        if(res==0){
-            cout<<"\033[1;32m----------- Reporte "<<tipo<<" Creado Exitosamente -----\033[0m"<<endl;
-        }
-    }
-
-
+    if(extension=="jpg"|extension=="JPG")comando.append("dot -Tjpg ");
+    else if(extension=="PDF"|extension=="pdf") comando.append("dot -Tpdf ");
+    else if(extension=="png"|extension=="PNG")comando.append("dot -Tpng ");
+    comando.append("grafo.dot ");
+    comando.append("-o ");
+    comando.append("\"");
+    comando.append(path);
+    comando.append("\"");
+    if(system(comando.c_str())==0) cout<<"Sistema: Reporte "<<tipo<<" Creado Exitosamente"<<endl;
 }
 
-/*
-void graficador::generate_bitmap(SuperBloque sb,QString choice,int partition_size,string output_path,FILE *file)
+void graficador::generate_bitmap(SuperBloque sb,QString choice,int partition_size,string output_path,FILE *file,int fs)
 { // el path es de la vda int star es el inicio de la particion y tambien tengo que mandar el tamaño de la particion
     //eligiendo el reporte que queremos
-    if(choice=="bm_arbdir")
+    if(choice=="bm_inode")
     {
         QString cuerpotdot="";
         char bm=0;
-        int bmi=sb.sb_ap_bitmap_arbol_directorio;
-        int terminabit = get_structures_number(partition_size);
-        for (int i=0;i<terminabit;i++) {
+        int bmi=sb.s_bm_inode_start;
+        //calculando numero de estructuras para size de la particion
+        int terminabit = file_system::structures_number(fs,partition_size);
+        for (int i=0;i<terminabit;i++)
+        {
+            if(get_deleted())
+            {
+                if(i!=0 && i%19==0) cuerpotdot+= '\n';
+                cuerpotdot += '0';
+                continue;
+            }
             fseek(file,bmi,SEEK_SET);
             fread(&bm,sizeof (char),1,file);
-            if(i==0){
-                if(bm==1){
-                    cuerpotdot+="1 ";
-
-                }else {
-                    cuerpotdot+="0 ";
-
-                }
-            }else {
-
-
-                if(i%20==0){
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-                        cuerpotdot+="\n";
-                    }else {
-                        cuerpotdot+="0 ";
-                        cuerpotdot+="\n";
-                    }
-
-                }else {
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-
-                    }else {
-                        cuerpotdot+="0 ";
-
-                    }
-                }
-            }
+            if(i!=0 && i%19==0) cuerpotdot+= '\n';
+            if(bm == '\0') cuerpotdot += '0';
+            else cuerpotdot += bm;
             bmi+=sizeof (char);
         }
-
         //Crear el archivo punto txt
         ofstream fileout;
         fileout.open(output_path);
         fileout<<cuerpotdot.toUtf8().constData();
         fileout.close();
-        printf("\n*********Reporte creado exitosamente**********\n");
-
-    }else if(choice=="bm_detdir"){
-        QString cuerpotdot="";
-        char bm=0;
-        int bmi=sb.sb_ap_bitmap_detalle_directorio;
-        int terminabit = get_structures_number(partition_size);
-        for (int i=0;i<terminabit;i++) {
-            fseek(file,bmi,SEEK_SET);
-            fread(&bm,sizeof (char),1,file);
-            if(i==0){
-                if(bm==1){
-                    cuerpotdot+="1 ";
-
-                }else {
-                    cuerpotdot+="0 ";
-
-                }
-            }else {
-
-
-                if(i%20==0){
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-                        cuerpotdot+="\n";
-                    }else {
-                        cuerpotdot+="0 ";
-                        cuerpotdot+="\n";
-                    }
-
-                }else {
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-
-                    }else {
-                        cuerpotdot+="0 ";
-
-                    }
-                }
-            }
-            bmi+=sizeof (char);
-        }
-
-        //Crear el archivo punto txt
-        ofstream fileout;
-        fileout.open(output_path);
-        fileout<<cuerpotdot.toUtf8().constData();
-        fileout.close();
-        printf("\n*********Reporte creado exitosamente**********\n");
-
+        printf("Sistema: Reporte creado exitosamente\n");
     }
-    else if(choice=="bm_inode")
+    else if(choice=="bm_block")
     {
         QString cuerpotdot="";
         char bm=0;
-        int bmi=sb.sb_ap_bitmap_tabla_inodo;
-        int terminabit = 5*get_structures_number(partition_size);
-        for (int i=0;i<terminabit;i++) {
+        int bmi=sb.s_bm_block_start;
+        int terminabit = 3 * file_system::structures_number(fs,partition_size);
+        for (int i=0;i<terminabit;i++)
+        {
+            if(get_deleted())
+            {
+                if(i!=0 && i%19==0) cuerpotdot+= '\n';
+                cuerpotdot += '0';
+                continue;
+            }
             fseek(file,bmi,SEEK_SET);
             fread(&bm,sizeof (char),1,file);
-            if(i==0){
-                if(bm==1){
-                    cuerpotdot+="1 ";
-
-                }else {
-                    cuerpotdot+="0 ";
-
-                }
-            }else {
-
-
-                if(i%20==0){
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-                        cuerpotdot+="\n";
-                    }else {
-                        cuerpotdot+="0 ";
-                        cuerpotdot+="\n";
-                    }
-
-                }else {
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-
-                    }else {
-                        cuerpotdot+="0 ";
-
-                    }
-                }
-            }
-            bmi+=sizeof (char);
-        }
-        //Crear el archivo punto txt
-        ofstream fileout;
-        fileout.open(output_path);
-        fileout<<cuerpotdot.toUtf8().constData();
-        fileout.close();
-        printf("\n*********Reporte creado exitosamente**********\n");
-    }
-    else if(choice=="bm_block"){
-
-        QString cuerpotdot="";
-        char bm=0;
-        int bmi=sb.sb_ap_bitmap_bloques;
-        int terminabit = 20*get_structures_number(partition_size);
-        for (int i=0;i<terminabit;i++) {
-            fseek(file,bmi,SEEK_SET);
-            fread(&bm,sizeof (char),1,file);
-            if(i==0){
-                if(bm==1){
-                    cuerpotdot+="1 ";
-
-                }else {
-                    cuerpotdot+="0 ";
-
-                }
-            }else {
-
-
-                if(i%20==0){
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-                        cuerpotdot+="\n";
-                    }else {
-                        cuerpotdot+="0 ";
-                        cuerpotdot+="\n";
-                    }
-
-                }else {
-                    if(bm==1){
-                        cuerpotdot+="1 ";
-
-                    }else {
-                        cuerpotdot+="0 ";
-
-                    }
-                }
-            }
+            if(i!=0 && i%19==0) cuerpotdot+= '\n';
+            if(bm == '\0') cuerpotdot += '0';
+            else cuerpotdot += bm;
             bmi+=sizeof (char);
         }
 
@@ -930,9 +641,70 @@ void graficador::generate_bitmap(SuperBloque sb,QString choice,int partition_siz
         fileout.open(output_path);
         fileout<<cuerpotdot.toUtf8().constData();
         fileout.close();
-        printf("\n*********Reporte creado exitosamente**********\n");
+        printf("Sistema: Reporte creado exitosamente\n");
     }
     fclose(file);
 }
 
-*/
+void graficador::generate_tables(string output_path,QString extension,FILE *file2, int choice,SuperBloque sb)
+{
+    tools tool;
+    //1 para tree complete, 2 para inodos
+    QString output_string = "digraph models_diagram{\n";
+    output_string += "graph[rankdir=LR, overlap=false, splines=true];\n";
+    output_string += "node [shape=record, fontsize=9, fontname=\"Verdana\" ];\n";
+    output_string += "edge [style=dashed];\n";
+    if(!get_deleted())
+    {
+        switch (choice)
+        {
+        case 1:
+        {
+            iNodo inode;
+            fseek(file2,sb.s_inode_start,SEEK_SET);
+            fread(&inode,sizeof (iNodo),1,file2);
+            output_string += tool.get_tree_report(inode,file2);
+        }
+            break;
+        case 2:
+            output_string += tool.get_full_inode_report(sb,file2);
+            break;
+        case 3:
+            output_string += tool.get_full_blocks_report(sb,file2);
+            break;
+        default:
+            output_string += tool.get_log_report(file2,choice);
+            break;
+        }
+
+    }
+
+    output_string += "\n}";
+
+    ofstream file;
+    file.open("grafo.dot");
+    file<<output_string.toUtf8().constData();
+    file.close();
+
+    //  cout<<extension<<endl;
+    string comando;
+    if(extension=="JPG")comando.append("dot -Tjpg ");
+    else if(extension=="PDF") comando.append("dot -Tpdf ");
+    else if(extension=="PNG")comando.append("dot -Tpng ");
+    comando.append("grafo.dot ");
+    comando.append("-o ");
+    comando.append("\"");
+    comando.append(output_path);
+    comando.append("\"");
+    if(system(comando.c_str())==0) cout<<"Sistema: Reporte creado Exitosamente"<<endl;
+}
+
+void graficador::generate_file_report(string full_file, string output_path)
+{
+    //Crear el archivo punto txt
+    ofstream fileout;
+    fileout.open(output_path);
+    fileout<<full_file;
+    fileout.close();
+    printf("Sistema: Reporte creado exitosamente\n");
+}
