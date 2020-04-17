@@ -99,7 +99,6 @@ INITIAL
     "\n" 	 	 {linea++; columna = 0; anterior = 0;}
     .   {
             columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);
-            std::cout <<yytext <<" Error Lexico en la linea "<< linea << " Columna:"<< columna<<  std::endl;
         }
 }
 %%

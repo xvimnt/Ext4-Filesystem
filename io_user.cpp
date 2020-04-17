@@ -18,8 +18,8 @@ void io_user::analize(std::string input){
             //ejecutando las instrucciones
             semantic smnt = semantic();
             smnt.compute(root);
-            //para generar nuestro arbol
-            ast_tree();
+            //para graficar nuestro arbol
+            //ast_tree();
         }
     }
 }
@@ -47,7 +47,8 @@ void io_user::read_from_file(Metadata data){
             else
             {
                 multi_line += line;
-                if(!multi_line.empty() && multi_line.rfind("#", 0) != 0){
+                if(!multi_line.empty() && multi_line.rfind("#", 0) != 0 && multi_line[0] != '\n' && multi_line[0] != '\0')
+                {
                     //borra comentarios del final
                     if(multi_line.find("#") != std::string::npos)
                     {
@@ -56,7 +57,6 @@ void io_user::read_from_file(Metadata data){
                         string.chop(chop_count);
                         multi_line = string.toStdString();
                     }
-
                     printf("\n\033[1;34m[MIA]201700831_Ejecutando instruccion: \n%s\033[0m\n",multi_line.c_str());
                     analize(multi_line);
                 }
@@ -65,7 +65,6 @@ void io_user::read_from_file(Metadata data){
         }
         myfile.close();
     }
-
     else printf("Error: no se pudo abrir: '%s'\n",data.path);
 }
 

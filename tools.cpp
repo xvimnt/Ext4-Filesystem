@@ -288,6 +288,8 @@ QString tools::get_blocks_report(iNodo inode, FILE * file)
                     + "-> table" + QString::number(report_count + 1) + ";\n";
             output_file += switch_block_report(inode.i_type,file,inode.i_block[i]);
         }
+        // si existe un directo vacio ya no pasar a los indirectos
+        else return output_file;
     }
     if(inode.i_block[12] != 0)
     {
@@ -378,12 +380,15 @@ QString tools::get_folder_block_report(Bloque_Carpeta folder_block)
 
 QString tools::get_file_block_report(Bloque_Archivo file_block)
 {
-    QString cont = QString().fromStdString(file_block.b_content);
+    // Leyendo el contenido del bloque archivo
+    QString cont = "";
+    for(int i = 0; i < 64; i++) if(file_block.b_content[i] != '\0') cont.append(file_block.b_content[i]);
+    // Generando el string de graphviz
     QString output_inode = "table"+QString::number(report_count)+" [shape=none, label=<";
     output_inode += "<table border=\"0\" cellborder=\"1\" cellspacing=\"0\" cellpadding=\"4\">";
     output_inode +=  "<tr><td  bgcolor=\"green\"> <font color=\"yellow\">Bloque Archivo</font> </td></tr>";
     output_inode += "<tr><td port=\"0\" align=\"right\">"
-            +cont.remove("\010")+"</td></tr>";
+            +cont+"</td></tr>";
 
     output_inode += "</table>>];\n\n";
     report_count++;
@@ -394,11 +399,11 @@ QString tools::get_pointer_string_report(Bloque_apuntador pointer)
 {
     QString output_inode = "table"+QString::number(report_count)+" [shape=none, label=<";
     output_inode += "<table border=\"0\" cellborder=\"1\" cellspacing=\"0\" cellpadding=\"4\">";
-    output_inode +=  "<tr><td  bgcolor=\"green\"> <font color=\"orange\">Bloque Apuntador</font> </td></tr>";
+    output_inode +=  "\n<tr><td  bgcolor=\"green\"> <font color=\"orange\">Bloque Apuntador</font> </td></tr>\n";
     for (int i = 0;i<16;i++)
     {
         output_inode += "<tr><td port=\"0\" align=\"right\">b_Pointers["+QString::number(i)+"]:"
-                +QString::number(pointer.b_pointers[i])+"</td></tr>";
+                +QString::number(pointer.b_pointers[i])+"</td></tr>\n";
     }
     output_inode += "</table>>];\n\n";
     report_count++;
@@ -526,10 +531,12 @@ QString tools::get_tree_report(iNodo inode,FILE* file)
                     + "-> table" + QString::number(report_count) + ";\n";
             output_file += switch_blocks(inode.i_type,file,inode.i_block[i]);
         }
+        // si encuentra uno vacio entre los primeros 12 ya no pasar a ver los indirectos
+        else return output_file;
     }
     if(inode.i_block[12] != 0)
     {
-        get_pointer_report(inode.i_block[12],file,inode.i_type,1);
+        output_file += get_pointer_report(inode.i_block[12],file,inode.i_type,1);
     }
     if(inode.i_block[13] != 0)
     {
@@ -897,7 +904,12 @@ QString tools::get_full_file(iNodo inode,FILE *file)
         {
             fseek(file,inode.i_block[i],SEEK_SET);
             fread(&content_block,sizeof (Bloque_Archivo),1,file);
-            response += content_block.b_content;
+            // concatenar solo 64 espacios
+            for(int k = 0; k < 64; k++)
+            {
+                if(content_block.b_content[k] != '\0')
+                    response += content_block.b_content[k];
+            }
         }
     }
     if(inode.i_block[12] != 0)
@@ -1051,10 +1063,17 @@ int tools::get_last_block_index(int i_block[15],FILE *file)
     {
         if(i < 12)
         {
+            // si el index es 0 regresar el anterior porque es el ultimo lleno
             if(i_block[i] == 0)
             {
                 if(i != 0) block_index = i - 1;
                 else block_index = 0;
+                break;
+            }
+            else if(i == 11)
+            {
+                // si ya va por el index 11
+                block_index = 11;
                 break;
             }
         }
@@ -1652,7 +1671,7 @@ int tools::make_new_folder_block(FILE *file, SuperBloque sb)
     for(int i = 0; i < 4; i++) folder_block.b_content[i] = new content();
     //la nueva direccion del bloque carpeta
     int folder_dir = get_free_block_index_by_bitmap(sb,file,true);
-    //apuntarlo
+    // guardarlo en archivo
     fseek(file,folder_dir,SEEK_SET);
     fwrite(&folder_block,sizeof (Bloque_Carpeta),1,file);
     return folder_dir;
@@ -1689,8 +1708,6 @@ int tools::get_block_with_free_content(int dir, FILE *file,SuperBloque sb, int r
     //leer el apuntador
     fseek(file,dir,SEEK_SET);
     fread(&temp,sizeof (Bloque_apuntador),1,file);
-    //nodo con espacio vacio
-    int last_empty_space = -1;
     //recorrer sus bloques carpetas y ver si alguno tiene contenido vacio
     for (int j = 0;j < 16; j++)
     {
@@ -1700,38 +1717,34 @@ int tools::get_block_with_free_content(int dir, FILE *file,SuperBloque sb, int r
             switch (recursevely)
             {
             case 1:
-                if(has_free_content(temp.b_pointers[j],file)) return true;
+                if(has_free_content(temp.b_pointers[j],file)) return temp.b_pointers[j];
                 break;
             case 2:
-                if(get_block_with_free_content(temp.b_pointers[j],file,sb,1)) return true;
-                break;
+                return get_block_with_free_content(temp.b_pointers[j],file,sb,1);
             case 3:
-                if(get_block_with_free_content(temp.b_pointers[j],file,sb,2)) return true;
-                break;
+                return get_block_with_free_content(temp.b_pointers[j],file,sb,2);
             }
         }
-        //guardar el ultimo espacio disponible
-        else last_empty_space = j;
-    }
-    //si ninguno tiene contenido vacio crearle un nuevo bloque carpeta
-    if(last_empty_space != -1)
-    {
-        switch (recursevely)
+        // crear un bloque de carpeta en la ultima posicion libre y regresar su direccion
+        else
         {
-        case 1:
-            temp.b_pointers[last_empty_space] = make_new_folder_block(file,sb);
-            break;
-        case 2:
-            temp.b_pointers[last_empty_space] = make_new_pointer_block(file,sb);
-            break;
-        case 3:
-            temp.b_pointers[last_empty_space] = make_new_pointer_block(file,sb);
-            break;
+            switch (recursevely)
+            {
+            case 1:
+                temp.b_pointers[j] = make_new_folder_block(file,sb);
+                break;
+            case 2:
+                temp.b_pointers[j] = make_new_pointer_block(file,sb);
+                break;
+            case 3:
+                temp.b_pointers[j] = make_new_pointer_block(file,sb);
+                break;
+            }
+            //guardar cambios
+            fseek(file,dir,SEEK_SET);
+            fwrite(&temp,sizeof (Bloque_apuntador),1,file);
+            return  temp.b_pointers[j];
         }
-        //guardar cambios
-        fseek(file,dir,SEEK_SET);
-        fread(&temp,sizeof (Bloque_apuntador),1,file);
-        return  temp.b_pointers[last_empty_space];
     }
     //ya esta todo lleno
     return -1;
@@ -1748,10 +1761,8 @@ int tools::get_last_folder_block_with_free_space(int inode_dir, FILE *file, Supe
     //si es directo el ultimo index
     if(last_block_index < 12)
     {
-        //me devuelve el index del bloque carpeta si tiene algun slot vacio
-        int free_block_dir = has_free_content(inode.i_block[last_block_index],file);
-        //si esta lleno
-        if(free_block_dir == -1)
+        //si esta lleno el bloque carpeta en sus 4 espacios
+        if(!has_free_content(inode.i_block[last_block_index],file))
         {
             if(last_block_index == 11) last_block_index++;
             else

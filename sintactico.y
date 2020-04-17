@@ -129,6 +129,7 @@ COMMAND_TYPE: tmkdisk { $$ = new node(yylineno, columna,"mkdisk",yytext);}
     | trmusr { $$ = new node(yylineno, columna,"rmusr",yytext);}
     | tchmod { $$ = new node(yylineno, columna,"chmod",yytext);}
     | tcat { $$ = new node(yylineno, columna,"cat",yytext);}
+    | tren { $$ = new node(yylineno, columna,"ren",yytext);}
 ;
 
 

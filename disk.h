@@ -31,6 +31,7 @@ class disk : public validations
 public:
 disk();
 void makeDisk(Metadata data);
+void renameFile(Metadata data);
 void fDisk(Metadata data);
 void removeDisk(Metadata data);
 void mountDisk(Metadata data);

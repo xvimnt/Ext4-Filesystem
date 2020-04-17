@@ -50,7 +50,8 @@ enum Choice
     UGO = 44,
     R = 45,
     CAT = 46,
-    TFILE = 47
+    TFILE = 47,
+    REN = 48
 };
 
 semantic::semantic()
@@ -99,10 +100,7 @@ node *semantic::compute(node *node_){
                 result->metadata.size = tempData->valor.toInt();
                 break;
             case PATH:
-                //colocar el path al nuevo disco
-                if(tempData->valor.length() > 2)
-                    strcpy(result->metadata.path, tempData->valor.toStdString().c_str());
-                else result->metadata.path[0] = 0;
+                strcpy(result->metadata.path, tempData->valor.toStdString().c_str());
                 break;
             case NAME:
                 //colocar el nombre al nuevo disco
@@ -218,6 +216,9 @@ node *semantic::compute(node *node_){
         case REP:
             command.makeReport(compute(node_->hijos[1])->metadata);
             break;
+        case REN:
+            //command.makeReport(compute(node_->hijos[1])->metadata);
+            break;
         case RECOVERY:
             command.recovery(compute(node_->hijos[1])->metadata);
             break;
@@ -228,7 +229,7 @@ node *semantic::compute(node *node_){
             command.login(compute(node_->hijos[1])->metadata);
             break;
         case MKDIR:
-            //command.makeDir(compute(node_->hijos[1])->metadata);
+            command.makeDir(compute(node_->hijos[1])->metadata);
             break;
         case MKFILE:
             command.makeFile(compute(node_->hijos[1])->metadata);
