@@ -78,7 +78,7 @@ INITIAL
     "rep"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return trep;}
     "mkdir"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tmkdir;}
     "cp"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tcp;}
-    "-destiny"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tdestiny;}
+    "-dest"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tdestiny;}
     "-iddestiny"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tiddestiny;}
     "mv"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tmv;}
     "find"  { columna = columna+ anterior;  anterior = strlen(yytext);strcpy(yylval.TEXT, yytext);return tfind;}

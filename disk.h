@@ -30,6 +30,7 @@ class disk : public validations
 {
 public:
 disk();
+void copyFile(Metadata data);
 void makeDisk(Metadata data);
 void renameFile(Metadata data);
 void fDisk(Metadata data);

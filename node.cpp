@@ -75,5 +75,7 @@ int node::getTipo()
     if(this->tipo=="cat"){return 46;}
     if(this->tipo=="file"){return 47;}
     if(this->tipo=="ren"){return 48;}
+    if(this->tipo=="cp"){return 49;}
+    if(this->tipo=="dest"){return 50;}
     return 0;
 }

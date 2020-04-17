@@ -51,7 +51,9 @@ enum Choice
     R = 45,
     CAT = 46,
     TFILE = 47,
-    REN = 48
+    REN = 48,
+    COPY = 49,
+    DEST = 50,
 };
 
 semantic::semantic()
@@ -101,6 +103,9 @@ node *semantic::compute(node *node_){
                 break;
             case PATH:
                 strcpy(result->metadata.path, tempData->valor.toStdString().c_str());
+                break;
+            case DEST:
+                strcpy(result->metadata.ruta, tempData->valor.toStdString().c_str());
                 break;
             case NAME:
                 //colocar el nombre al nuevo disco
@@ -177,6 +182,9 @@ node *semantic::compute(node *node_){
         case CAT:
             command.showFile(compute(node_->hijos[1])->metadata,false);
             break;
+        case COPY:
+            command.copyFile(compute(node_->hijos[1])->metadata);
+            break;
         case RMDISK:
             //elimina el disco
             command.removeDisk(compute(node_->hijos[1])->metadata);
@@ -217,7 +225,7 @@ node *semantic::compute(node *node_){
             command.makeReport(compute(node_->hijos[1])->metadata);
             break;
         case REN:
-            //command.makeReport(compute(node_->hijos[1])->metadata);
+            command.renameFile(compute(node_->hijos[1])->metadata);
             break;
         case RECOVERY:
             command.recovery(compute(node_->hijos[1])->metadata);

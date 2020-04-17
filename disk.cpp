@@ -1818,8 +1818,8 @@ void disk::makeFile(Metadata data)
         }
         else
         {
-             printf("Error: Al crear archivo, origen no encontrado %s\n",data.ruta);
-             return;
+            printf("Error: Al crear archivo, origen no encontrado %s\n",data.ruta);
+            return;
         }
     }
 
@@ -2065,7 +2065,6 @@ void disk::renameFile(Metadata data)
     //*******Validacion de parametros***********//
     //si es la carpeta root
     if(!validate_path(data.path,false)) return;
-    if(!validate_ugo(data.add)) return;
     Partition current_partition = get_mounted_partition(cookie.id);
     if(current_partition.start == -1)
     {//si la particion no esta montada
@@ -2113,28 +2112,37 @@ void disk::renameFile(Metadata data)
                         //se encuentra el archivo o carpeta
                         if(lines[iterator] == cont->b_name)
                         {
-                            //La direccion del inodo
-                            direction = cont->b_inodo;
-                            //actualizando el inodo al que encontro
-                            fseek(file,direction,SEEK_SET);
-                            fread(&to_modify, sizeof(iNodo), 1, file);
-                            //ultima fecha que se leyo el inodo sin modificarlo
-                            to_modify.i_atime = time(nullptr);
                             // si es el bloque carpeta que buscamos
                             if(iterator + 1 == lines.count())
                             {
-                                //buscar si es propietario del archivo o carpeta
-                                if(cookie.tag == to_modify.i_uid)
+                                // renombrando
+                                fix_path(data.name,50);
+                                clean(cont->b_name,12);
+                                strcpy(cont->b_name,data.name);
+                                // guardando cambios
+                                // si es ext3 crear bitacora
+                                if(sb.s_filesystem_type == 3)
                                 {
-                                   strcpy(cont->b_name,data.name);
+                                    Bitacora* log = new Bitacora("ren",data.path,data.name);
+                                    add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
                                 }
-                                else
-                                {
-                                    printf("Sistema: No se pudo modificar, usted no es propietario de este objeto: %s\n",data.path);
-                                    return;
-                                }
+
+                                fseek(file,to_modify.i_block[i],SEEK_SET);
+                                fwrite(&file_content, sizeof(Bloque_Carpeta), 1, file);
+                                printf("Sistema: Renombrado con exito\n");
+                                return;
                             }
-                            break;
+                            else
+                            {
+                                //La direccion del inodo
+                                direction = cont->b_inodo;
+                                //actualizando el inodo al que encontro
+                                fseek(file,direction,SEEK_SET);
+                                fread(&to_modify, sizeof(iNodo), 1, file);
+                                //ultima fecha que se leyo el inodo sin modificarlo
+                                to_modify.i_atime = time(nullptr);
+                                break;
+                            }
                         }
                     }
                     //si se encontro en el bloque ya no buscar en el siguiente
@@ -2154,5 +2162,121 @@ void disk::renameFile(Metadata data)
     //actualizando los permisos del inodo
 
     //mensaje de exito
-    printf("Sistema: Permisos actualizados con exito\n");
+    printf("Error: objeto no encontrado\n");
+}
+
+void disk::copyFile(Metadata data)
+{
+    //*******Validacion de parametros***********//
+    if(!validate_path(data.path,false)) return;
+    if(!validate_path(data.ruta,false)) return;
+    Partition current_partition = get_mounted_partition(cookie.id);
+    if(current_partition.start == -1)
+    {//si la particion no esta montada
+        printf("Error: no existe particion montada");
+        return;
+    }
+
+    //***************Ejecucion**********//
+    //abrir el disco para escribir en el
+    FILE* file = get_file_by_id(cookie.id);
+    //leyendo el superbloque de la particion
+    SuperBloque sb = get_part_sb(file,current_partition.start);
+    //obteniendo el primer inodo
+    iNodo to_modify;
+    fseek(file,sb.s_inode_start,SEEK_SET);
+    fread(&to_modify, sizeof(iNodo), 1, file);
+    //separar la ruta para obtener las carpetas
+    QStringList lines = QString(data.path).split('/');
+    //para iterar los niveles en el arbol
+    int iterator = 0;
+    //para guardar la direccion del inodo que buscamos modificar
+    int direction = 0, last_direction = sb.s_inode_start;
+    // para guardar el nombre del archivo
+    string filename = "";
+    //subiendo en los niveles
+    while (iterator < lines.count())
+    {
+        //setear a 0 para encontrar el nuevo nivel
+        direction = search_path_in_inode(to_modify,file,lines[iterator]);
+        //si no lo encuentra
+        if(direction == 0)
+        {
+            printf("Sistema: ruta inexistente: %s\n",data.path);
+            return;
+        }
+        else
+        {
+            //actualizar el inodo para subir de nivel
+            filename = lines[iterator].toStdString();
+            fseek(file,direction,SEEK_SET);
+            fread(&to_modify, sizeof(iNodo), 1, file);
+        }
+        //aumentando el nivel del arbol
+        last_direction = direction;
+        iterator++;
+    }
+    //Se obtiene el contenido del archivo
+    string full_file = get_full_file(to_modify,file).toStdString();
+    // seperar ruta de destino
+    lines = QString(data.ruta).split('/');
+    // setear el primer inodo
+    fseek(file,sb.s_inode_start,SEEK_SET);
+    fread(&to_modify, sizeof(iNodo), 1, file);
+    //para iterar los niveles en el arbol
+    iterator = 0;
+    //para guardar la direccion del inodo que buscamos modificar
+    direction = 0;
+    last_direction = sb.s_inode_start;
+    //subiendo en los niveles
+    while (iterator < lines.count())
+    {
+        //setear a 0 para encontrar el nuevo nivel
+        direction = search_path_in_inode(to_modify,file,lines[iterator]);
+        //si no lo encuentra
+        if(direction == 0)
+        {
+            printf("Sistema: ruta de destino inexistente: %s\n",data.ruta);
+            return;
+        }
+        else
+        {
+            //actualizar el inodo para subir de nivel
+            fseek(file,direction,SEEK_SET);
+            fread(&to_modify, sizeof(iNodo), 1, file);
+        }
+        //aumentando el nivel del arbol
+        last_direction = direction;
+        iterator++;
+    }
+    // creando nuevo archivo
+    if(
+            //la direccion es la de un bloque carpeta con espacios vacios
+            make_file_in_block
+            (
+                file
+                ,get_last_folder_block_with_free_space(last_direction,file,sb)
+                ,to_modify
+                ,-1
+                ,sb,filename.c_str()
+                , full_file.c_str()
+                ) == 0
+            )
+    {
+        //si devuelve 0 no se pudo crear el archivo por falta de espacio
+        printf("Error: Al crear archivo en el destino\n");
+        fclose(file);
+        return;
+    }
+    //mensaje al usuario
+    printf("Sistema: Archivo copiado con exito\n");
+    // si es ext3 crear bitacora
+    if(sb.s_filesystem_type == 3)
+    {
+        Bitacora* log = new Bitacora("copyFile",data.path,data.ruta);
+        add_new_log(log,file,current_partition.start + static_cast<int>(sizeof (SuperBloque)));
+    }
+
+    fclose(file);
+    return;
 }

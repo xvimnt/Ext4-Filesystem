@@ -130,6 +130,7 @@ COMMAND_TYPE: tmkdisk { $$ = new node(yylineno, columna,"mkdisk",yytext);}
     | tchmod { $$ = new node(yylineno, columna,"chmod",yytext);}
     | tcat { $$ = new node(yylineno, columna,"cat",yytext);}
     | tren { $$ = new node(yylineno, columna,"ren",yytext);}
+    | tcp { $$ = new node(yylineno, columna,"cp",yytext);}
 ;
 
 
@@ -177,5 +178,6 @@ ATTRIB_NAME: tsize { $$ = new node(yylineno, columna,"size",yytext);}
         | tcont { $$ = new node(yylineno, columna,"cont",yytext);}
         | tugo { $$ = new node(yylineno, columna,"ugo",yytext);}
         | tfile { $$ = new node(yylineno, columna,"file",yytext);}
+        | tdestiny { $$ = new node(yylineno, columna,"dest",yytext);}
 ;
 %%
